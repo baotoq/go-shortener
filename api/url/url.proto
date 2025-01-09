@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package url;
+
+import "google/api/annotations.proto";
+
+option go_package = "go-shortener/api/url;url";
+option java_multiple_files = true;
+option java_package = "api.url";
+
+service Url {
+	rpc CreateUrl (CreateUrlRequest) returns (CreateUrlResponse) {
+		option (google.api.http) = {
+			post: "/url"
+			body: "*"
+		};
+	};
+	rpc GetUrl (GetUrlRequest) returns (GetUrlResponse) {
+		option (google.api.http) = {
+			get: "/url/{shortened_url}"
+		};
+	};
+}
+
+message CreateUrlRequest {
+	string url = 1;
+}
+message CreateUrlResponse {
+	int32 id = 1;
+	string shortened_url = 2;
+}
+
+message GetUrlRequest {
+	string shortened_url = 1;
+}
+message GetUrlResponse {
+	int32 id = 1;
+	string url = 2;
+}
+

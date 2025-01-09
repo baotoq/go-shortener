@@ -3,15 +3,13 @@
 
 openapi: 3.0.3
 info:
-    title: Greeter API
-    description: The greeting service definition.
+    title: ""
     version: 0.0.1
 paths:
     /helloworld/{name}:
         get:
             tags:
                 - Greeter
-                - subgroup
             description: Sends a greeting
             operationId: Greeter_SayHello
             parameters:
@@ -27,6 +25,42 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/helloworld.v1.HelloReply'
+    /url:
+        post:
+            tags:
+                - Url
+            operationId: Url_CreateUrl
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/url.CreateUrlRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/url.CreateUrlResponse'
+    /url/{shortenedUrl}:
+        get:
+            tags:
+                - Url
+            operationId: Url_GetUrl
+            parameters:
+                - name: shortenedUrl
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/url.GetUrlResponse'
 components:
     schemas:
         helloworld.v1.HelloReply:
@@ -35,5 +69,28 @@ components:
                 message:
                     type: string
             description: The response message containing the greetings
+        url.CreateUrlRequest:
+            type: object
+            properties:
+                url:
+                    type: string
+        url.CreateUrlResponse:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    format: int32
+                shortenedUrl:
+                    type: string
+        url.GetUrlResponse:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    format: int32
+                url:
+                    type: string
 tags:
     - name: Greeter
+      description: The greeting service definition.
+    - name: Url
