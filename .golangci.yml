@@ -1,0 +1,21 @@
+run:
+  timeout: 5m
+  skip-dirs:
+    - ent
+    - third_party
+    - api
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+issues:
+  exclude-dirs:
+    - ent
+    - third_party
+    - api
