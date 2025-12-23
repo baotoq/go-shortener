@@ -1,24 +1,24 @@
-FROM golang:1.19 AS builder
+FROM golang:1.23-alpine AS builder
 
-COPY . /src
+RUN apk add --no-cache gcc musl-dev
+
 WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
 
-RUN GOPROXY=https://goproxy.cn make build
+COPY . .
+RUN CGO_ENABLED=1 go build -o /app/go-shortener ./cmd/go-shortener
 
-FROM debian:stable-slim
+FROM alpine:latest
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-		ca-certificates  \
-        netbase \
-        && rm -rf /var/lib/apt/lists/ \
-        && apt-get autoremove -y && apt-get autoclean -y
+RUN apk add --no-cache ca-certificates tzdata
 
-COPY --from=builder /src/bin /app
+COPY --from=builder /app/go-shortener /app/go-shortener
+COPY configs/config.yaml /data/conf/config.yaml
 
 WORKDIR /app
 
 EXPOSE 8000
 EXPOSE 9000
-VOLUME /data/conf
 
-CMD ["./server", "-conf", "/data/conf"]
+CMD ["./go-shortener", "-conf", "/data/conf/config.yaml"]
