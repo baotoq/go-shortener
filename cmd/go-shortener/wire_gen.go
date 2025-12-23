@@ -7,13 +7,13 @@
 package main
 
 import (
+	"github.com/go-kratos/kratos/v2"
+	"github.com/go-kratos/kratos/v2/log"
 	"go-shortener/internal/biz"
 	"go-shortener/internal/conf"
 	"go-shortener/internal/data"
 	"go-shortener/internal/server"
 	"go-shortener/internal/service"
-	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/log"
 )
 
 import (
@@ -24,15 +24,15 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*kratos.App, func(), error) {
-	dataData, cleanup, err := data.NewData(confData)
+	dataData, cleanup, err := data.NewData(confData, logger)
 	if err != nil {
 		return nil, nil, err
 	}
-	greeterRepo := data.NewGreeterRepo(dataData, logger)
-	greeterUsecase := biz.NewGreeterUsecase(greeterRepo)
-	greeterService := service.NewGreeterService(greeterUsecase)
-	grpcServer := server.NewGRPCServer(confServer, greeterService, logger)
-	httpServer := server.NewHTTPServer(confServer, greeterService, logger)
+	urlRepo := data.NewURLRepo(dataData, logger)
+	urlUsecase := biz.NewURLUsecase(urlRepo, logger)
+	shortenerService := service.NewShortenerService(urlUsecase)
+	grpcServer := server.NewGRPCServer(confServer, shortenerService, logger)
+	httpServer := server.NewHTTPServer(confServer, shortenerService, logger)
 	app := newApp(logger, grpcServer, httpServer)
 	return app, func() {
 		cleanup()

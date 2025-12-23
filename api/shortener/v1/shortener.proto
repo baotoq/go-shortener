@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package shortener.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "go-shortener/api/shortener/v1;v1";
+
+// URL Shortener service
+service Shortener {
+  // Create a new shortened URL
+  rpc CreateURL (CreateURLRequest) returns (CreateURLReply) {
+    option (google.api.http) = {
+      post: "/v1/urls"
+      body: "*"
+    };
+  }
+
+  // Get URL info by short code
+  rpc GetURL (GetURLRequest) returns (GetURLReply) {
+    option (google.api.http) = {
+      get: "/v1/urls/{short_code}"
+    };
+  }
+
+  // Redirect to original URL (increments click count)
+  rpc RedirectURL (RedirectURLRequest) returns (RedirectURLReply) {
+    option (google.api.http) = {
+      get: "/r/{short_code}"
+    };
+  }
+
+  // Get URL statistics
+  rpc GetURLStats (GetURLStatsRequest) returns (GetURLStatsReply) {
+    option (google.api.http) = {
+      get: "/v1/urls/{short_code}/stats"
+    };
+  }
+
+  // Delete a URL
+  rpc DeleteURL (DeleteURLRequest) returns (DeleteURLReply) {
+    option (google.api.http) = {
+      delete: "/v1/urls/{short_code}"
+    };
+  }
+
+  // List all URLs with pagination
+  rpc ListURLs (ListURLsRequest) returns (ListURLsReply) {
+    option (google.api.http) = {
+      get: "/v1/urls"
+    };
+  }
+}
+
+// Create URL request
+message CreateURLRequest {
+  string original_url = 1;
+  optional string custom_code = 2;
+  optional google.protobuf.Timestamp expires_at = 3;
+}
+
+// Create URL response
+message CreateURLReply {
+  URLInfo url = 1;
+}
+
+// Get URL request
+message GetURLRequest {
+  string short_code = 1;
+}
+
+// Get URL response
+message GetURLReply {
+  URLInfo url = 1;
+}
+
+// Redirect request
+message RedirectURLRequest {
+  string short_code = 1;
+}
+
+// Redirect response
+message RedirectURLReply {
+  string original_url = 1;
+}
+
+// Get stats request
+message GetURLStatsRequest {
+  string short_code = 1;
+}
+
+// Get stats response
+message GetURLStatsReply {
+  string short_code = 1;
+  string original_url = 2;
+  int64 click_count = 3;
+  google.protobuf.Timestamp created_at = 4;
+  optional google.protobuf.Timestamp expires_at = 5;
+}
+
+// Delete URL request
+message DeleteURLRequest {
+  string short_code = 1;
+}
+
+// Delete URL response
+message DeleteURLReply {
+  bool success = 1;
+}
+
+// List URLs request
+message ListURLsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+// List URLs response
+message ListURLsReply {
+  repeated URLInfo urls = 1;
+  int32 total = 2;
+}
+
+// URL info
+message URLInfo {
+  int64 id = 1;
+  string short_code = 2;
+  string original_url = 3;
+  string short_url = 4;
+  int64 click_count = 5;
+  google.protobuf.Timestamp created_at = 6;
+  optional google.protobuf.Timestamp expires_at = 7;
+}

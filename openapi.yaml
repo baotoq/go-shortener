@@ -3,19 +3,18 @@
 
 openapi: 3.0.3
 info:
-    title: Greeter API
-    description: The greeting service definition.
+    title: Shortener API
+    description: URL Shortener service
     version: 0.0.1
 paths:
-    /helloworld/{name}:
+    /r/{shortCode}:
         get:
             tags:
-                - Greeter
-                - subgroup
-            description: Sends a greeting
-            operationId: Greeter_SayHello
+                - Shortener
+            description: Redirect to original URL (increments click count)
+            operationId: Shortener_RedirectURL
             parameters:
-                - name: name
+                - name: shortCode
                   in: path
                   required: true
                   schema:
@@ -26,14 +25,188 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/helloworld.v1.HelloReply'
+                                $ref: '#/components/schemas/shortener.v1.RedirectURLReply'
+    /v1/urls:
+        get:
+            tags:
+                - Shortener
+            description: List all URLs with pagination
+            operationId: Shortener_ListURLs
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/shortener.v1.ListURLsReply'
+        post:
+            tags:
+                - Shortener
+            description: Create a new shortened URL
+            operationId: Shortener_CreateURL
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/shortener.v1.CreateURLRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/shortener.v1.CreateURLReply'
+    /v1/urls/{shortCode}:
+        get:
+            tags:
+                - Shortener
+            description: Get URL info by short code
+            operationId: Shortener_GetURL
+            parameters:
+                - name: shortCode
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/shortener.v1.GetURLReply'
+        delete:
+            tags:
+                - Shortener
+            description: Delete a URL
+            operationId: Shortener_DeleteURL
+            parameters:
+                - name: shortCode
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/shortener.v1.DeleteURLReply'
+    /v1/urls/{shortCode}/stats:
+        get:
+            tags:
+                - Shortener
+            description: Get URL statistics
+            operationId: Shortener_GetURLStats
+            parameters:
+                - name: shortCode
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/shortener.v1.GetURLStatsReply'
 components:
     schemas:
-        helloworld.v1.HelloReply:
+        shortener.v1.CreateURLReply:
             type: object
             properties:
-                message:
+                url:
+                    $ref: '#/components/schemas/shortener.v1.URLInfo'
+            description: Create URL response
+        shortener.v1.CreateURLRequest:
+            type: object
+            properties:
+                originalUrl:
                     type: string
-            description: The response message containing the greetings
+                customCode:
+                    type: string
+                expiresAt:
+                    type: string
+                    format: date-time
+            description: Create URL request
+        shortener.v1.DeleteURLReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: Delete URL response
+        shortener.v1.GetURLReply:
+            type: object
+            properties:
+                url:
+                    $ref: '#/components/schemas/shortener.v1.URLInfo'
+            description: Get URL response
+        shortener.v1.GetURLStatsReply:
+            type: object
+            properties:
+                shortCode:
+                    type: string
+                originalUrl:
+                    type: string
+                clickCount:
+                    type: string
+                createdAt:
+                    type: string
+                    format: date-time
+                expiresAt:
+                    type: string
+                    format: date-time
+            description: Get stats response
+        shortener.v1.ListURLsReply:
+            type: object
+            properties:
+                urls:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/shortener.v1.URLInfo'
+                total:
+                    type: integer
+                    format: int32
+            description: List URLs response
+        shortener.v1.RedirectURLReply:
+            type: object
+            properties:
+                originalUrl:
+                    type: string
+            description: Redirect response
+        shortener.v1.URLInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                shortCode:
+                    type: string
+                originalUrl:
+                    type: string
+                shortUrl:
+                    type: string
+                clickCount:
+                    type: string
+                createdAt:
+                    type: string
+                    format: date-time
+                expiresAt:
+                    type: string
+                    format: date-time
+            description: URL info
 tags:
-    - name: Greeter
+    - name: Shortener

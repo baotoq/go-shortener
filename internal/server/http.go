@@ -1,7 +1,10 @@
 package server
 
 import (
-	v1 "go-shortener/api/helloworld/v1"
+	"context"
+	nethttp "net/http"
+
+	v1 "go-shortener/api/shortener/v1"
 	"go-shortener/internal/conf"
 	"go-shortener/internal/service"
 
@@ -11,7 +14,7 @@ import (
 )
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, greeter *service.GreeterService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, shortener *service.ShortenerService, logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
@@ -27,6 +30,20 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService, logger log.L
 		opts = append(opts, http.Timeout(c.Http.Timeout.AsDuration()))
 	}
 	srv := http.NewServer(opts...)
-	v1.RegisterGreeterHTTPServer(srv, greeter)
+	v1.RegisterShortenerHTTPServer(srv, shortener)
+
+	// Add redirect handler with 302 redirect
+	srv.HandleFunc("/r/{short_code}", func(w nethttp.ResponseWriter, r *nethttp.Request) {
+		shortCode := r.URL.Path[len("/r/"):]
+		resp, err := shortener.RedirectURL(context.Background(), &v1.RedirectURLRequest{
+			ShortCode: shortCode,
+		})
+		if err != nil {
+			nethttp.Error(w, err.Error(), 404)
+			return
+		}
+		nethttp.Redirect(w, r, resp.OriginalUrl, 302)
+	})
+
 	return srv
 }
