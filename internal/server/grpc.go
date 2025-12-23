@@ -1,7 +1,7 @@
 package server
 
 import (
-	urlV1 "go-shortener/api/url"
+	v1 "go-shortener/api/helloworld/v1"
 	"go-shortener/internal/conf"
 	"go-shortener/internal/service"
 
@@ -11,7 +11,7 @@ import (
 )
 
 // NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, url *service.UrlService, logger log.Logger) *grpc.Server {
+func NewGRPCServer(c *conf.Server, greeter *service.GreeterService, logger log.Logger) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
@@ -27,6 +27,6 @@ func NewGRPCServer(c *conf.Server, url *service.UrlService, logger log.Logger) *
 		opts = append(opts, grpc.Timeout(c.Grpc.Timeout.AsDuration()))
 	}
 	srv := grpc.NewServer(opts...)
-	urlV1.RegisterUrlServer(srv, url)
+	v1.RegisterGreeterServer(srv, greeter)
 	return srv
 }

@@ -1,7 +1,7 @@
 package server
 
 import (
-	urlV1 "go-shortener/api/url"
+	v1 "go-shortener/api/helloworld/v1"
 	"go-shortener/internal/conf"
 	"go-shortener/internal/service"
 
@@ -11,7 +11,7 @@ import (
 )
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, url *service.UrlService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, greeter *service.GreeterService, logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
@@ -27,6 +27,6 @@ func NewHTTPServer(c *conf.Server, url *service.UrlService, logger log.Logger) *
 		opts = append(opts, http.Timeout(c.Http.Timeout.AsDuration()))
 	}
 	srv := http.NewServer(opts...)
-	urlV1.RegisterUrlHTTPServer(srv, url)
+	v1.RegisterGreeterHTTPServer(srv, greeter)
 	return srv
 }
