@@ -1,0 +1,19 @@
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      glob: "**/*.go"
+      run: golangci-lint run --fix
+    test:
+      glob: "**/*.go"
+      run: go test ./...
+
+pre-push:
+  parallel: true
+  commands:
+    lint:
+      glob: "**/*.go"
+      run: golangci-lint run
+    test:
+      glob: "**/*.go"
+      run: go test ./...

@@ -2,8 +2,6 @@ module go-shortener
 
 go 1.23
 
-toolchain go1.24.6
-
 require (
 	entgo.io/ent v0.14.5
 	github.com/go-kratos/kratos/v2 v2.9.2

@@ -61,7 +61,7 @@ go-shortener/
 ### Development
 
 ```bash
-# Install dependencies and tools
+# Install dependencies and tools (includes golangci-lint, lefthook)
 make init
 
 # Generate API code from proto files
