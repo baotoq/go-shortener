@@ -7,6 +7,7 @@ import (
 	v1 "go-shortener/api/shortener/v1"
 	"go-shortener/internal/biz"
 
+	"github.com/samber/lo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -101,10 +102,9 @@ func (s *ShortenerService) ListURLs(ctx context.Context, req *v1.ListURLsRequest
 		return nil, err
 	}
 
-	urlInfos := make([]*v1.URLInfo, len(urls))
-	for i, u := range urls {
-		urlInfos[i] = s.toURLInfo(u)
-	}
+	urlInfos := lo.Map(urls, func(u *biz.URL, _ int) *v1.URLInfo {
+		return s.toURLInfo(u)
+	})
 
 	return &v1.ListURLsReply{
 		Urls:  urlInfos,

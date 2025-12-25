@@ -11,6 +11,7 @@ import (
 	"go-shortener/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/samber/lo"
 )
 
 const (
@@ -117,10 +118,9 @@ func (r *urlRepo) List(ctx context.Context, page, pageSize int) ([]*biz.URL, int
 		return nil, 0, err
 	}
 
-	result := make([]*biz.URL, len(urls))
-	for i, u := range urls {
-		result[i] = r.entToBiz(u)
-	}
+	result := lo.Map(urls, func(u *ent.URL, _ int) *biz.URL {
+		return r.entToBiz(u)
+	})
 
 	return result, total, nil
 }

@@ -2,18 +2,16 @@ package biz
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
-	"net/url"
-	"regexp"
-	"strings"
 	"time"
+
+	"go-shortener/internal/domain"
 
 	v1 "go-shortener/api/shortener/v1"
 
 	"github.com/go-kratos/kratos/v2/log"
 )
 
+// Application layer errors that wrap domain errors with API error types
 var (
 	ErrURLNotFound     = v1.ErrorUrlNotFound("url not found")
 	ErrURLExpired      = v1.ErrorUrlExpired("url has expired")
@@ -21,8 +19,6 @@ var (
 	ErrShortCodeExists = v1.ErrorShortCodeExists("short code already exists")
 	ErrInvalidCode     = v1.ErrorInvalidShortCode("invalid short code format")
 )
-
-var shortCodeRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 type URL struct {
 	ID          int64
@@ -61,9 +57,9 @@ func DefaultURLConfig() *URLConfig {
 	return &URLConfig{
 		BaseURL:        "http://localhost:8000",
 		DefaultExpiry:  0,
-		ShortCodeLen:   6,
-		MaxCustomLen:   20,
-		MinCustomLen:   3,
+		ShortCodeLen:   domain.DefaultShortCodeLength,
+		MaxCustomLen:   domain.MaxCustomCodeLength,
+		MinCustomLen:   domain.MinCustomCodeLength,
 	}
 }
 
@@ -76,25 +72,27 @@ func NewURLUsecase(repo URLRepo, logger log.Logger) *URLUsecase {
 }
 
 func (uc *URLUsecase) CreateURL(ctx context.Context, originalURL string, customCode *string, expiresAt *time.Time) (*URL, error) {
-	if err := uc.validateURL(originalURL); err != nil {
-		return nil, err
+	// Validate original URL using domain value object
+	domainOriginalURL, err := domain.NewOriginalURL(originalURL)
+	if err != nil {
+		return nil, ErrInvalidURL
 	}
 
-	var shortCode string
-	var err error
-
+	// Create or validate short code using domain value object
+	var shortCode domain.ShortCode
 	if customCode != nil && *customCode != "" {
-		if err := uc.validateCustomCode(*customCode); err != nil {
-			return nil, err
+		shortCode, err = domain.NewShortCode(*customCode)
+		if err != nil {
+			return nil, ErrInvalidCode
 		}
-		exists, err := uc.repo.ExistsShortCode(ctx, *customCode)
+
+		exists, err := uc.repo.ExistsShortCode(ctx, shortCode.String())
 		if err != nil {
 			return nil, err
 		}
 		if exists {
 			return nil, ErrShortCodeExists
 		}
-		shortCode = *customCode
 	} else {
 		shortCode, err = uc.generateUniqueCode(ctx)
 		if err != nil {
@@ -102,10 +100,14 @@ func (uc *URLUsecase) CreateURL(ctx context.Context, originalURL string, customC
 		}
 	}
 
+	// Create domain entity
+	domainURL := domain.NewURL(shortCode, domainOriginalURL, expiresAt)
+
+	// Convert to DTO for persistence
 	u := &URL{
-		ShortCode:   shortCode,
-		OriginalURL: originalURL,
-		ExpiresAt:   expiresAt,
+		ShortCode:   domainURL.ShortCode().String(),
+		OriginalURL: domainURL.OriginalURL().String(),
+		ExpiresAt:   domainURL.ExpiresAt(),
 	}
 
 	created, err := uc.repo.Create(ctx, u)
@@ -113,7 +115,7 @@ func (uc *URLUsecase) CreateURL(ctx context.Context, originalURL string, customC
 		return nil, err
 	}
 
-	uc.log.WithContext(ctx).Infof("Created URL: %s -> %s", shortCode, originalURL)
+	uc.log.WithContext(ctx).Infof("Created URL: %s -> %s", shortCode.String(), originalURL)
 	return created, nil
 }
 
@@ -168,66 +170,21 @@ func (uc *URLUsecase) GetShortURL(shortCode string) string {
 	return uc.config.BaseURL + "/r/" + shortCode
 }
 
-func (uc *URLUsecase) validateURL(rawURL string) error {
-	if rawURL == "" {
-		return ErrInvalidURL
-	}
-
-	parsed, err := url.ParseRequestURI(rawURL)
-	if err != nil {
-		return ErrInvalidURL
-	}
-
-	if parsed.Scheme != "http" && parsed.Scheme != "https" {
-		return ErrInvalidURL
-	}
-
-	if parsed.Host == "" {
-		return ErrInvalidURL
-	}
-
-	return nil
-}
-
-func (uc *URLUsecase) validateCustomCode(code string) error {
-	if len(code) < uc.config.MinCustomLen || len(code) > uc.config.MaxCustomLen {
-		return ErrInvalidCode
-	}
-
-	if !shortCodeRegex.MatchString(code) {
-		return ErrInvalidCode
-	}
-
-	return nil
-}
-
-func (uc *URLUsecase) generateUniqueCode(ctx context.Context) (string, error) {
+// generateUniqueCode generates a unique short code using the domain layer.
+func (uc *URLUsecase) generateUniqueCode(ctx context.Context) (domain.ShortCode, error) {
 	for i := 0; i < 10; i++ {
-		code, err := generateShortCode(uc.config.ShortCodeLen)
+		code, err := domain.GenerateShortCode(uc.config.ShortCodeLen)
 		if err != nil {
-			return "", err
+			return domain.ShortCode{}, err
 		}
 
-		exists, err := uc.repo.ExistsShortCode(ctx, code)
+		exists, err := uc.repo.ExistsShortCode(ctx, code.String())
 		if err != nil {
-			return "", err
+			return domain.ShortCode{}, err
 		}
 		if !exists {
 			return code, nil
 		}
 	}
-	return "", ErrShortCodeExists
-}
-
-func generateShortCode(length int) (string, error) {
-	bytes := make([]byte, length)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-	code := base64.URLEncoding.EncodeToString(bytes)
-	code = strings.TrimRight(code, "=")
-	if len(code) > length {
-		code = code[:length]
-	}
-	return code, nil
+	return domain.ShortCode{}, ErrShortCodeExists
 }
