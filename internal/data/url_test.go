@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"go-shortener/ent/enttest"
-	"go-shortener/internal/biz"
+	"go-shortener/internal/domain"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/stretchr/testify/assert"
@@ -35,69 +35,66 @@ func setupTestRepo(t *testing.T) (*urlRepo, func()) {
 	return repo, cleanup
 }
 
-func TestURLRepo_Create(t *testing.T) {
+func TestURLRepo_Save(t *testing.T) {
 	repo, cleanup := setupTestRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
-	u := &biz.URL{
-		ShortCode:   "test123",
-		OriginalURL: "https://example.com",
-	}
+	sc, _ := domain.NewShortCode("test123")
+	ou, _ := domain.NewOriginalURL("https://example.com")
+	u := domain.NewURL(sc, ou, nil)
 
-	created, err := repo.Create(ctx, u)
+	err := repo.Save(ctx, u)
 	require.NoError(t, err)
-	assert.NotZero(t, created.ID)
-	assert.Equal(t, u.ShortCode, created.ShortCode)
-	assert.Equal(t, u.OriginalURL, created.OriginalURL)
-	assert.Zero(t, created.ClickCount)
+	assert.NotZero(t, u.ID())
+	assert.Equal(t, "test123", u.ShortCode().String())
+	assert.Equal(t, "https://example.com", u.OriginalURL().String())
+	assert.Zero(t, u.ClickCount())
 }
 
-func TestURLRepo_Create_WithExpiry(t *testing.T) {
+func TestURLRepo_Save_WithExpiry(t *testing.T) {
 	repo, cleanup := setupTestRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	expiresAt := time.Now().Add(24 * time.Hour)
 
-	u := &biz.URL{
-		ShortCode:   "expiry",
-		OriginalURL: "https://example.com",
-		ExpiresAt:   &expiresAt,
-	}
+	sc, _ := domain.NewShortCode("expiry")
+	ou, _ := domain.NewOriginalURL("https://example.com")
+	u := domain.NewURL(sc, ou, &expiresAt)
 
-	created, err := repo.Create(ctx, u)
+	err := repo.Save(ctx, u)
 	require.NoError(t, err)
-	assert.NotNil(t, created.ExpiresAt)
+	assert.NotNil(t, u.ExpiresAt())
 }
 
-func TestURLRepo_GetByShortCode(t *testing.T) {
+func TestURLRepo_FindByShortCode(t *testing.T) {
 	repo, cleanup := setupTestRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
-	u := &biz.URL{
-		ShortCode:   "gettest",
-		OriginalURL: "https://example.com",
-	}
-	_, err := repo.Create(ctx, u)
+	sc, _ := domain.NewShortCode("gettest")
+	ou, _ := domain.NewOriginalURL("https://example.com")
+	u := domain.NewURL(sc, ou, nil)
+	err := repo.Save(ctx, u)
 	require.NoError(t, err)
 
-	found, err := repo.GetByShortCode(ctx, "gettest")
+	found, err := repo.FindByShortCode(ctx, sc)
 	require.NoError(t, err)
 	require.NotNil(t, found)
-	assert.Equal(t, "gettest", found.ShortCode)
+	assert.Equal(t, "gettest", found.ShortCode().String())
 }
 
-func TestURLRepo_GetByShortCode_NotFound(t *testing.T) {
+func TestURLRepo_FindByShortCode_NotFound(t *testing.T) {
 	repo, cleanup := setupTestRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
-	found, err := repo.GetByShortCode(ctx, "nonexistent")
+	sc, _ := domain.NewShortCode("nonexistent")
+	found, err := repo.FindByShortCode(ctx, sc)
 	require.NoError(t, err)
 	assert.Nil(t, found)
 }
@@ -108,26 +105,25 @@ func TestURLRepo_IncrementClickCount(t *testing.T) {
 
 	ctx := context.Background()
 
-	u := &biz.URL{
-		ShortCode:   "clicks",
-		OriginalURL: "https://example.com",
-	}
-	_, err := repo.Create(ctx, u)
+	sc, _ := domain.NewShortCode("clicks")
+	ou, _ := domain.NewOriginalURL("https://example.com")
+	u := domain.NewURL(sc, ou, nil)
+	err := repo.Save(ctx, u)
 	require.NoError(t, err)
 
-	err = repo.IncrementClickCount(ctx, "clicks")
+	err = repo.IncrementClickCount(ctx, sc)
 	require.NoError(t, err)
 
-	found, err := repo.GetByShortCode(ctx, "clicks")
+	found, err := repo.FindByShortCode(ctx, sc)
 	require.NoError(t, err)
-	assert.Equal(t, int64(1), found.ClickCount)
+	assert.Equal(t, int64(1), found.ClickCount())
 
-	_ = repo.IncrementClickCount(ctx, "clicks")
-	_ = repo.IncrementClickCount(ctx, "clicks")
+	_ = repo.IncrementClickCount(ctx, sc)
+	_ = repo.IncrementClickCount(ctx, sc)
 
-	found, err = repo.GetByShortCode(ctx, "clicks")
+	found, err = repo.FindByShortCode(ctx, sc)
 	require.NoError(t, err)
-	assert.Equal(t, int64(3), found.ClickCount)
+	assert.Equal(t, int64(3), found.ClickCount())
 }
 
 func TestURLRepo_Delete(t *testing.T) {
@@ -136,85 +132,82 @@ func TestURLRepo_Delete(t *testing.T) {
 
 	ctx := context.Background()
 
-	u := &biz.URL{
-		ShortCode:   "todelete",
-		OriginalURL: "https://example.com",
-	}
-	_, err := repo.Create(ctx, u)
+	sc, _ := domain.NewShortCode("todelete")
+	ou, _ := domain.NewOriginalURL("https://example.com")
+	u := domain.NewURL(sc, ou, nil)
+	err := repo.Save(ctx, u)
 	require.NoError(t, err)
 
-	err = repo.Delete(ctx, "todelete")
+	err = repo.Delete(ctx, sc)
 	require.NoError(t, err)
 
-	found, err := repo.GetByShortCode(ctx, "todelete")
+	found, err := repo.FindByShortCode(ctx, sc)
 	require.NoError(t, err)
 	assert.Nil(t, found)
 }
 
-func TestURLRepo_List(t *testing.T) {
+func TestURLRepo_FindAll(t *testing.T) {
 	repo, cleanup := setupTestRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
 	for i := 0; i < 5; i++ {
-		u := &biz.URL{
-			ShortCode:   "list" + string(rune('a'+i)),
-			OriginalURL: "https://example.com",
-		}
-		_, err := repo.Create(ctx, u)
+		sc, _ := domain.NewShortCode("list" + string(rune('a'+i)))
+		ou, _ := domain.NewOriginalURL("https://example.com")
+		u := domain.NewURL(sc, ou, nil)
+		err := repo.Save(ctx, u)
 		require.NoError(t, err)
 	}
 
-	urls, total, err := repo.List(ctx, 1, 10)
+	urls, total, err := repo.FindAll(ctx, 1, 10)
 	require.NoError(t, err)
 	assert.Len(t, urls, 5)
 	assert.Equal(t, 5, total)
 }
 
-func TestURLRepo_List_Pagination(t *testing.T) {
+func TestURLRepo_FindAll_Pagination(t *testing.T) {
 	repo, cleanup := setupTestRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
 	for i := 0; i < 10; i++ {
-		u := &biz.URL{
-			ShortCode:   "page" + string(rune('a'+i)),
-			OriginalURL: "https://example.com",
-		}
-		_, err := repo.Create(ctx, u)
+		sc, _ := domain.NewShortCode("page" + string(rune('a'+i)))
+		ou, _ := domain.NewOriginalURL("https://example.com")
+		u := domain.NewURL(sc, ou, nil)
+		err := repo.Save(ctx, u)
 		require.NoError(t, err)
 	}
 
-	urls, total, err := repo.List(ctx, 1, 3)
+	urls, total, err := repo.FindAll(ctx, 1, 3)
 	require.NoError(t, err)
 	assert.Len(t, urls, 3)
 	assert.Equal(t, 10, total)
 
-	urls2, _, err := repo.List(ctx, 2, 3)
+	urls2, _, err := repo.FindAll(ctx, 2, 3)
 	require.NoError(t, err)
 	assert.Len(t, urls2, 3)
 }
 
-func TestURLRepo_ExistsShortCode(t *testing.T) {
+func TestURLRepo_Exists(t *testing.T) {
 	repo, cleanup := setupTestRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
-	u := &biz.URL{
-		ShortCode:   "exists",
-		OriginalURL: "https://example.com",
-	}
-	_, err := repo.Create(ctx, u)
+	sc, _ := domain.NewShortCode("exists")
+	ou, _ := domain.NewOriginalURL("https://example.com")
+	u := domain.NewURL(sc, ou, nil)
+	err := repo.Save(ctx, u)
 	require.NoError(t, err)
 
-	exists, err := repo.ExistsShortCode(ctx, "exists")
+	exists, err := repo.Exists(ctx, sc)
 	require.NoError(t, err)
 	assert.True(t, exists)
 
-	exists, err = repo.ExistsShortCode(ctx, "notexists")
+	scNotExists, _ := domain.NewShortCode("notexists")
+	exists, err = repo.Exists(ctx, scNotExists)
 	require.NoError(t, err)
 	assert.False(t, exists)
 }

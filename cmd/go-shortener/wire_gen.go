@@ -28,8 +28,10 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	if err != nil {
 		return nil, nil, err
 	}
-	urlRepo := data.NewURLRepo(dataData, logger)
-	urlUsecase := biz.NewURLUsecase(urlRepo, logger)
+	urlRepository := data.NewURLRepo(dataData, logger)
+	dispatcher := data.NewEventDispatcher(logger)
+	unitOfWork := data.NewUnitOfWork(dataData, dispatcher, logger)
+	urlUsecase := biz.NewURLUsecase(urlRepository, unitOfWork, logger)
 	shortenerService := service.NewShortenerService(urlUsecase)
 	grpcServer := server.NewGRPCServer(confServer, shortenerService, logger)
 	httpServer := server.NewHTTPServer(confServer, shortenerService, logger)

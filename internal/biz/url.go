@@ -20,27 +20,10 @@ var (
 	ErrInvalidCode     = v1.ErrorInvalidShortCode("invalid short code format")
 )
 
-type URL struct {
-	ID          int64
-	ShortCode   string
-	OriginalURL string
-	ClickCount  int64
-	ExpiresAt   *time.Time
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-}
-
-type URLRepo interface {
-	Create(ctx context.Context, url *URL) (*URL, error)
-	GetByShortCode(ctx context.Context, shortCode string) (*URL, error)
-	IncrementClickCount(ctx context.Context, shortCode string) error
-	Delete(ctx context.Context, shortCode string) error
-	List(ctx context.Context, page, pageSize int) ([]*URL, int, error)
-	ExistsShortCode(ctx context.Context, shortCode string) (bool, error)
-}
-
+// URLUsecase handles URL business logic.
 type URLUsecase struct {
-	repo   URLRepo
+	repo   domain.URLRepository
+	uow    domain.UnitOfWork
 	log    *log.Helper
 	config *URLConfig
 }
@@ -63,15 +46,17 @@ func DefaultURLConfig() *URLConfig {
 	}
 }
 
-func NewURLUsecase(repo URLRepo, logger log.Logger) *URLUsecase {
+// NewURLUsecase creates a new URLUsecase.
+func NewURLUsecase(repo domain.URLRepository, uow domain.UnitOfWork, logger log.Logger) *URLUsecase {
 	return &URLUsecase{
 		repo:   repo,
+		uow:    uow,
 		log:    log.NewHelper(logger),
 		config: DefaultURLConfig(),
 	}
 }
 
-func (uc *URLUsecase) CreateURL(ctx context.Context, originalURL string, customCode *string, expiresAt *time.Time) (*URL, error) {
+func (uc *URLUsecase) CreateURL(ctx context.Context, originalURL string, customCode *string, expiresAt *time.Time) (*domain.URL, error) {
 	// Validate original URL using domain value object
 	domainOriginalURL, err := domain.NewOriginalURL(originalURL)
 	if err != nil {
@@ -86,7 +71,7 @@ func (uc *URLUsecase) CreateURL(ctx context.Context, originalURL string, customC
 			return nil, ErrInvalidCode
 		}
 
-		exists, err := uc.repo.ExistsShortCode(ctx, shortCode.String())
+		exists, err := uc.repo.Exists(ctx, shortCode)
 		if err != nil {
 			return nil, err
 		}
@@ -100,27 +85,27 @@ func (uc *URLUsecase) CreateURL(ctx context.Context, originalURL string, customC
 		}
 	}
 
-	// Create domain entity
+	// Create domain entity (this raises URLCreated event)
 	domainURL := domain.NewURL(shortCode, domainOriginalURL, expiresAt)
 
-	// Convert to DTO for persistence
-	u := &URL{
-		ShortCode:   domainURL.ShortCode().String(),
-		OriginalURL: domainURL.OriginalURL().String(),
-		ExpiresAt:   domainURL.ExpiresAt(),
-	}
-
-	created, err := uc.repo.Create(ctx, u)
+	// Execute within transaction, pass aggregate for event dispatch
+	err = uc.uow.Do(ctx, func(txCtx context.Context) error {
+		return uc.repo.Save(txCtx, domainURL)
+	}, domainURL)
 	if err != nil {
 		return nil, err
 	}
 
-	uc.log.WithContext(ctx).Infof("Created URL: %s -> %s", shortCode.String(), originalURL)
-	return created, nil
+	return domainURL, nil
 }
 
-func (uc *URLUsecase) GetURL(ctx context.Context, shortCode string) (*URL, error) {
-	u, err := uc.repo.GetByShortCode(ctx, shortCode)
+func (uc *URLUsecase) GetURL(ctx context.Context, shortCode string) (*domain.URL, error) {
+	sc, err := domain.NewShortCode(shortCode)
+	if err != nil {
+		return nil, ErrInvalidCode
+	}
+
+	u, err := uc.repo.FindByShortCode(ctx, sc)
 	if err != nil {
 		return nil, err
 	}
@@ -128,42 +113,67 @@ func (uc *URLUsecase) GetURL(ctx context.Context, shortCode string) (*URL, error
 		return nil, ErrURLNotFound
 	}
 
-	if u.ExpiresAt != nil && u.ExpiresAt.Before(time.Now()) {
+	if u.IsExpired() {
 		return nil, ErrURLExpired
 	}
 
 	return u, nil
 }
 
+// RedirectURL handles URL redirection and dispatches click events.
 func (uc *URLUsecase) RedirectURL(ctx context.Context, shortCode string) (string, error) {
+	return uc.RedirectURLWithContext(ctx, shortCode, "", "", "")
+}
+
+// RedirectURLWithContext handles URL redirection with additional context for analytics.
+func (uc *URLUsecase) RedirectURLWithContext(ctx context.Context, shortCode, userAgent, ipAddress, referrer string) (string, error) {
 	u, err := uc.GetURL(ctx, shortCode)
 	if err != nil {
 		return "", err
 	}
 
-	if err := uc.repo.IncrementClickCount(ctx, shortCode); err != nil {
-		uc.log.WithContext(ctx).Warnf("Failed to increment click count for %s: %v", shortCode, err)
+	sc, _ := domain.NewShortCode(shortCode)
+
+	// Record click event
+	u.RecordClick(userAgent, ipAddress, referrer)
+
+	// Execute within transaction, pass aggregate for event dispatch
+	err = uc.uow.Do(ctx, func(txCtx context.Context) error {
+		return uc.repo.IncrementClickCount(txCtx, sc)
+	}, u)
+	if err != nil {
+		uc.log.WithContext(ctx).Warnf("Failed to record click for %s: %v", shortCode, err)
 	}
 
-	return u.OriginalURL, nil
+	return u.OriginalURL().String(), nil
 }
 
-func (uc *URLUsecase) GetURLStats(ctx context.Context, shortCode string) (*URL, error) {
+func (uc *URLUsecase) GetURLStats(ctx context.Context, shortCode string) (*domain.URL, error) {
 	return uc.GetURL(ctx, shortCode)
 }
 
 func (uc *URLUsecase) DeleteURL(ctx context.Context, shortCode string) error {
-	return uc.repo.Delete(ctx, shortCode)
+	sc, err := domain.NewShortCode(shortCode)
+	if err != nil {
+		return ErrInvalidCode
+	}
+
+	deletedAggregate := domain.NewDeletedURLAggregate(shortCode)
+
+	// Execute within transaction, pass aggregate for event dispatch
+	return uc.uow.Do(ctx, func(txCtx context.Context) error {
+		return uc.repo.Delete(txCtx, sc)
+	}, deletedAggregate)
 }
 
-func (uc *URLUsecase) ListURLs(ctx context.Context, page, pageSize int) ([]*URL, int, error) {
+func (uc *URLUsecase) ListURLs(ctx context.Context, page, pageSize int) ([]*domain.URL, int, error) {
 	if page < 1 {
 		page = 1
 	}
 	if pageSize < 1 || pageSize > 100 {
 		pageSize = 20
 	}
-	return uc.repo.List(ctx, page, pageSize)
+	return uc.repo.FindAll(ctx, page, pageSize)
 }
 
 func (uc *URLUsecase) GetShortURL(shortCode string) string {
@@ -178,7 +188,7 @@ func (uc *URLUsecase) generateUniqueCode(ctx context.Context) (domain.ShortCode,
 			return domain.ShortCode{}, err
 		}
 
-		exists, err := uc.repo.ExistsShortCode(ctx, code.String())
+		exists, err := uc.repo.Exists(ctx, code)
 		if err != nil {
 			return domain.ShortCode{}, err
 		}

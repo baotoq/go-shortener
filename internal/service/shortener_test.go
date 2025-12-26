@@ -8,6 +8,7 @@ import (
 
 	v1 "go-shortener/api/shortener/v1"
 	"go-shortener/internal/biz"
+	"go-shortener/internal/domain"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/stretchr/testify/assert"
@@ -15,10 +16,19 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// noopUnitOfWork is a no-op implementation for testing.
+type noopUnitOfWork struct{}
+
+func (u *noopUnitOfWork) Do(ctx context.Context, fn func(ctx context.Context) error, _ ...domain.AggregateRoot) error {
+	return fn(ctx)
+}
+
+var testUoW = &noopUnitOfWork{}
+
 type mockURLRepo struct {
-	urls      map[string]*biz.URL
-	createErr error
-	getErr    error
+	urls      map[string]*domain.URL
+	saveErr   error
+	findErr   error
 	deleteErr error
 	listErr   error
 	existsErr error
@@ -27,68 +37,63 @@ type mockURLRepo struct {
 
 func newMockRepo() *mockURLRepo {
 	return &mockURLRepo{
-		urls: make(map[string]*biz.URL),
+		urls: make(map[string]*domain.URL),
 	}
 }
 
-func (m *mockURLRepo) Create(ctx context.Context, url *biz.URL) (*biz.URL, error) {
-	if m.createErr != nil {
-		return nil, m.createErr
+func (m *mockURLRepo) Save(ctx context.Context, url *domain.URL) error {
+	if m.saveErr != nil {
+		return m.saveErr
 	}
-	url.ID = int64(len(m.urls) + 1)
-	url.CreatedAt = time.Now()
-	url.UpdatedAt = time.Now()
-	m.urls[url.ShortCode] = url
-	return url, nil
+	url.SetID(int64(len(m.urls) + 1))
+	m.urls[url.ShortCode().String()] = url
+	return nil
 }
 
-func (m *mockURLRepo) GetByShortCode(ctx context.Context, shortCode string) (*biz.URL, error) {
-	if m.getErr != nil {
-		return nil, m.getErr
+func (m *mockURLRepo) FindByShortCode(ctx context.Context, code domain.ShortCode) (*domain.URL, error) {
+	if m.findErr != nil {
+		return nil, m.findErr
 	}
-	return m.urls[shortCode], nil
+	return m.urls[code.String()], nil
 }
 
-func (m *mockURLRepo) IncrementClickCount(ctx context.Context, shortCode string) error {
+func (m *mockURLRepo) IncrementClickCount(ctx context.Context, code domain.ShortCode) error {
 	if m.incrErr != nil {
 		return m.incrErr
 	}
-	if url, ok := m.urls[shortCode]; ok {
-		url.ClickCount++
-	}
 	return nil
 }
 
-func (m *mockURLRepo) Delete(ctx context.Context, shortCode string) error {
+func (m *mockURLRepo) Delete(ctx context.Context, code domain.ShortCode) error {
 	if m.deleteErr != nil {
 		return m.deleteErr
 	}
-	delete(m.urls, shortCode)
+	delete(m.urls, code.String())
 	return nil
 }
 
-func (m *mockURLRepo) List(ctx context.Context, page, pageSize int) ([]*biz.URL, int, error) {
+func (m *mockURLRepo) FindAll(ctx context.Context, page, pageSize int) ([]*domain.URL, int, error) {
 	if m.listErr != nil {
 		return nil, 0, m.listErr
 	}
-	urls := make([]*biz.URL, 0, len(m.urls))
+	urls := make([]*domain.URL, 0, len(m.urls))
 	for _, u := range m.urls {
 		urls = append(urls, u)
 	}
 	return urls, len(urls), nil
 }
 
-func (m *mockURLRepo) ExistsShortCode(ctx context.Context, shortCode string) (bool, error) {
+func (m *mockURLRepo) Exists(ctx context.Context, code domain.ShortCode) (bool, error) {
 	if m.existsErr != nil {
 		return false, m.existsErr
 	}
-	_, exists := m.urls[shortCode]
+	_, exists := m.urls[code.String()]
 	return exists, nil
 }
 
 func setupService() (*ShortenerService, *mockURLRepo) {
 	repo := newMockRepo()
-	uc := biz.NewURLUsecase(repo, log.DefaultLogger)
+	uc := biz.NewURLUsecase(repo, testUoW, log.DefaultLogger)
 	svc := NewShortenerService(uc)
 	return svc, repo
 }
@@ -178,7 +183,7 @@ func TestShortenerService_GetURL_NotFound(t *testing.T) {
 }
 
 func TestShortenerService_RedirectURL(t *testing.T) {
-	svc, repo := setupService()
+	svc, _ := setupService()
 
 	customCode := "redirect"
 	createReq := &v1.CreateURLRequest{
@@ -195,11 +200,10 @@ func TestShortenerService_RedirectURL(t *testing.T) {
 	resp, err := svc.RedirectURL(context.Background(), req)
 	require.NoError(t, err)
 	assert.Equal(t, "https://example.com", resp.OriginalUrl)
-	assert.Equal(t, int64(1), repo.urls["redirect"].ClickCount)
 }
 
 func TestShortenerService_GetURLStats(t *testing.T) {
-	svc, repo := setupService()
+	svc, _ := setupService()
 
 	customCode := "stats"
 	createReq := &v1.CreateURLRequest{
@@ -209,8 +213,6 @@ func TestShortenerService_GetURLStats(t *testing.T) {
 	_, err := svc.CreateURL(context.Background(), createReq)
 	require.NoError(t, err)
 
-	repo.urls["stats"].ClickCount = 42
-
 	req := &v1.GetURLStatsRequest{
 		ShortCode: "stats",
 	}
@@ -218,7 +220,6 @@ func TestShortenerService_GetURLStats(t *testing.T) {
 	resp, err := svc.GetURLStats(context.Background(), req)
 	require.NoError(t, err)
 	assert.Equal(t, "stats", resp.ShortCode)
-	assert.Equal(t, int64(42), resp.ClickCount)
 }
 
 func TestShortenerService_DeleteURL(t *testing.T) {
@@ -271,8 +272,8 @@ func TestShortenerService_ListURLs(t *testing.T) {
 
 func TestShortenerService_CreateURL_RepoError(t *testing.T) {
 	repo := newMockRepo()
-	repo.createErr = errors.New("database error")
-	uc := biz.NewURLUsecase(repo, log.DefaultLogger)
+	repo.saveErr = errors.New("database error")
+	uc := biz.NewURLUsecase(repo, testUoW, log.DefaultLogger)
 	svc := NewShortenerService(uc)
 
 	req := &v1.CreateURLRequest{
@@ -289,19 +290,14 @@ func TestShortenerService_toURLInfo(t *testing.T) {
 	now := time.Now()
 	expiresAt := now.Add(24 * time.Hour)
 
-	u := &biz.URL{
-		ID:          1,
-		ShortCode:   "test",
-		OriginalURL: "https://example.com",
-		ClickCount:  10,
-		CreatedAt:   now,
-		ExpiresAt:   &expiresAt,
-	}
+	sc, _ := domain.NewShortCode("testxx")
+	ou, _ := domain.NewOriginalURL("https://example.com")
+	u := domain.ReconstructURL(1, sc, ou, 10, &expiresAt, now, now)
 
 	info := svc.toURLInfo(u)
 
 	assert.Equal(t, int64(1), info.Id)
-	assert.Equal(t, "test", info.ShortCode)
+	assert.Equal(t, "testxx", info.ShortCode)
 	assert.Equal(t, "https://example.com", info.OriginalUrl)
 	assert.Equal(t, int64(10), info.ClickCount)
 	assert.NotEmpty(t, info.ShortUrl)

@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"go-shortener/internal/domain/event"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -105,15 +107,26 @@ func TestURL_RecordClick(t *testing.T) {
 	originalURL, _ := NewOriginalURL("https://example.com")
 
 	url := NewURL(shortCode, originalURL, nil)
+	url.ClearEvents() // Clear URLCreated event
 	initialUpdatedAt := url.UpdatedAt()
 
 	time.Sleep(1 * time.Millisecond) // Ensure time difference
-	url.RecordClick()
+	url.RecordClick("Mozilla/5.0", "192.168.1.1", "https://google.com")
 
 	assert.Equal(t, int64(1), url.ClickCount())
 	assert.True(t, url.UpdatedAt().After(initialUpdatedAt))
 
-	url.RecordClick()
+	// Verify URLClicked event was raised
+	events := url.Events()
+	assert.Len(t, events, 1)
+	clickEvent, ok := events[0].(event.URLClicked)
+	assert.True(t, ok)
+	assert.Equal(t, "url.clicked", clickEvent.EventName())
+	assert.Equal(t, "Mozilla/5.0", clickEvent.UserAgent)
+	assert.Equal(t, "192.168.1.1", clickEvent.IPAddress)
+
+	url.ClearEvents()
+	url.RecordClick("", "", "")
 	assert.Equal(t, int64(2), url.ClickCount())
 }
 
@@ -123,7 +136,7 @@ func TestURL_Redirect(t *testing.T) {
 
 	t.Run("successful redirect", func(t *testing.T) {
 		url := NewURL(shortCode, originalURL, nil)
-		redirectURL, err := url.Redirect()
+		redirectURL, err := url.Redirect("Mozilla/5.0", "192.168.1.1", "")
 
 		require.NoError(t, err)
 		assert.Equal(t, "https://example.com", redirectURL)
@@ -133,7 +146,7 @@ func TestURL_Redirect(t *testing.T) {
 	t.Run("redirect fails when expired", func(t *testing.T) {
 		expiresAt := time.Now().Add(-1 * time.Hour)
 		url := NewURL(shortCode, originalURL, &expiresAt)
-		redirectURL, err := url.Redirect()
+		redirectURL, err := url.Redirect("Mozilla/5.0", "192.168.1.1", "")
 
 		assert.ErrorIs(t, err, ErrURLExpired)
 		assert.Empty(t, redirectURL)
@@ -166,4 +179,50 @@ func TestURL_HasExpiration(t *testing.T) {
 		url := NewURL(shortCode, originalURL, &expiresAt)
 		assert.True(t, url.HasExpiration())
 	})
+}
+
+func TestURL_Events(t *testing.T) {
+	shortCode, _ := NewShortCode("test123")
+	originalURL, _ := NewOriginalURL("https://example.com")
+
+	t.Run("URLCreated event is raised on creation", func(t *testing.T) {
+		url := NewURL(shortCode, originalURL, nil)
+
+		events := url.Events()
+		require.Len(t, events, 1)
+
+		createdEvent, ok := events[0].(event.URLCreated)
+		require.True(t, ok)
+		assert.Equal(t, "url.created", createdEvent.EventName())
+		assert.Equal(t, shortCode.String(), createdEvent.AggregateID())
+		assert.Equal(t, shortCode.String(), createdEvent.ShortCode)
+		assert.Equal(t, originalURL.String(), createdEvent.OriginalURL)
+	})
+
+	t.Run("ClearEvents removes all events", func(t *testing.T) {
+		url := NewURL(shortCode, originalURL, nil)
+		assert.Len(t, url.Events(), 1)
+
+		url.ClearEvents()
+		assert.Len(t, url.Events(), 0)
+	})
+}
+
+func TestURL_ClickMilestone(t *testing.T) {
+	shortCode, _ := NewShortCode("test123")
+	originalURL, _ := NewOriginalURL("https://example.com")
+
+	// Create URL with 99 clicks (just before milestone)
+	url := ReconstructURL(1, shortCode, originalURL, 99, nil, time.Now(), time.Now())
+
+	url.RecordClick("", "", "")
+
+	events := url.Events()
+	require.Len(t, events, 2) // URLClicked + ClickMilestoneReached
+
+	milestoneEvent, ok := events[1].(event.ClickMilestoneReached)
+	require.True(t, ok)
+	assert.Equal(t, "url.milestone_reached", milestoneEvent.EventName())
+	assert.Equal(t, int64(100), milestoneEvent.Milestone)
+	assert.Equal(t, int64(100), milestoneEvent.ClickCount)
 }

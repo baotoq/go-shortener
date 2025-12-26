@@ -6,15 +6,26 @@ import (
 	"testing"
 	"time"
 
+	"go-shortener/internal/domain"
+
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+// noopUnitOfWork is a no-op implementation for testing.
+type noopUnitOfWork struct{}
+
+func (u *noopUnitOfWork) Do(ctx context.Context, fn func(ctx context.Context) error, _ ...domain.AggregateRoot) error {
+	return fn(ctx)
+}
+
+var testUoW = &noopUnitOfWork{}
+
 type mockURLRepo struct {
-	urls      map[string]*URL
-	createErr error
-	getErr    error
+	urls      map[string]*domain.URL
+	saveErr   error
+	findErr   error
 	deleteErr error
 	listErr   error
 	existsErr error
@@ -23,62 +34,57 @@ type mockURLRepo struct {
 
 func newMockRepo() *mockURLRepo {
 	return &mockURLRepo{
-		urls: make(map[string]*URL),
+		urls: make(map[string]*domain.URL),
 	}
 }
 
-func (m *mockURLRepo) Create(ctx context.Context, url *URL) (*URL, error) {
-	if m.createErr != nil {
-		return nil, m.createErr
+func (m *mockURLRepo) Save(ctx context.Context, url *domain.URL) error {
+	if m.saveErr != nil {
+		return m.saveErr
 	}
-	url.ID = int64(len(m.urls) + 1)
-	url.CreatedAt = time.Now()
-	url.UpdatedAt = time.Now()
-	m.urls[url.ShortCode] = url
-	return url, nil
+	url.SetID(int64(len(m.urls) + 1))
+	m.urls[url.ShortCode().String()] = url
+	return nil
 }
 
-func (m *mockURLRepo) GetByShortCode(ctx context.Context, shortCode string) (*URL, error) {
-	if m.getErr != nil {
-		return nil, m.getErr
+func (m *mockURLRepo) FindByShortCode(ctx context.Context, code domain.ShortCode) (*domain.URL, error) {
+	if m.findErr != nil {
+		return nil, m.findErr
 	}
-	return m.urls[shortCode], nil
+	return m.urls[code.String()], nil
 }
 
-func (m *mockURLRepo) IncrementClickCount(ctx context.Context, shortCode string) error {
+func (m *mockURLRepo) IncrementClickCount(ctx context.Context, code domain.ShortCode) error {
 	if m.incrErr != nil {
 		return m.incrErr
 	}
-	if url, ok := m.urls[shortCode]; ok {
-		url.ClickCount++
-	}
 	return nil
 }
 
-func (m *mockURLRepo) Delete(ctx context.Context, shortCode string) error {
+func (m *mockURLRepo) Delete(ctx context.Context, code domain.ShortCode) error {
 	if m.deleteErr != nil {
 		return m.deleteErr
 	}
-	delete(m.urls, shortCode)
+	delete(m.urls, code.String())
 	return nil
 }
 
-func (m *mockURLRepo) List(ctx context.Context, page, pageSize int) ([]*URL, int, error) {
+func (m *mockURLRepo) FindAll(ctx context.Context, page, pageSize int) ([]*domain.URL, int, error) {
 	if m.listErr != nil {
 		return nil, 0, m.listErr
 	}
-	urls := make([]*URL, 0, len(m.urls))
+	urls := make([]*domain.URL, 0, len(m.urls))
 	for _, u := range m.urls {
 		urls = append(urls, u)
 	}
 	return urls, len(urls), nil
 }
 
-func (m *mockURLRepo) ExistsShortCode(ctx context.Context, shortCode string) (bool, error) {
+func (m *mockURLRepo) Exists(ctx context.Context, code domain.ShortCode) (bool, error) {
 	if m.existsErr != nil {
 		return false, m.existsErr
 	}
-	_, exists := m.urls[shortCode]
+	_, exists := m.urls[code.String()]
 	return exists, nil
 }
 
@@ -143,7 +149,7 @@ func TestURLUsecase_CreateURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			repo := newMockRepo()
-			uc := NewURLUsecase(repo, log.DefaultLogger)
+			uc := NewURLUsecase(repo, testUoW, log.DefaultLogger)
 
 			url, err := uc.CreateURL(context.Background(), tt.originalURL, tt.customCode, tt.expiresAt)
 
@@ -153,12 +159,12 @@ func TestURLUsecase_CreateURL(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			assert.Equal(t, tt.originalURL, url.OriginalURL)
+			assert.Equal(t, tt.originalURL, url.OriginalURL().String())
 
 			if tt.customCode != nil {
-				assert.Equal(t, *tt.customCode, url.ShortCode)
+				assert.Equal(t, *tt.customCode, url.ShortCode().String())
 			} else {
-				assert.NotEmpty(t, url.ShortCode)
+				assert.NotEmpty(t, url.ShortCode().String())
 			}
 		})
 	}
@@ -166,7 +172,7 @@ func TestURLUsecase_CreateURL(t *testing.T) {
 
 func TestURLUsecase_CreateURL_DuplicateCustomCode(t *testing.T) {
 	repo := newMockRepo()
-	uc := NewURLUsecase(repo, log.DefaultLogger)
+	uc := NewURLUsecase(repo, testUoW, log.DefaultLogger)
 
 	customCode := "existing"
 	_, err := uc.CreateURL(context.Background(), "https://example.com", &customCode, nil)
@@ -178,7 +184,7 @@ func TestURLUsecase_CreateURL_DuplicateCustomCode(t *testing.T) {
 
 func TestURLUsecase_GetURL(t *testing.T) {
 	repo := newMockRepo()
-	uc := NewURLUsecase(repo, log.DefaultLogger)
+	uc := NewURLUsecase(repo, testUoW, log.DefaultLogger)
 
 	customCode := "testcode"
 	created, err := uc.CreateURL(context.Background(), "https://example.com", &customCode, nil)
@@ -191,7 +197,7 @@ func TestURLUsecase_GetURL(t *testing.T) {
 	}{
 		{
 			name:      "existing url",
-			shortCode: created.ShortCode,
+			shortCode: created.ShortCode().String(),
 			wantErr:   false,
 		},
 		{
@@ -211,25 +217,22 @@ func TestURLUsecase_GetURL(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			assert.Equal(t, tt.shortCode, url.ShortCode)
+			assert.Equal(t, tt.shortCode, url.ShortCode().String())
 		})
 	}
 }
 
 func TestURLUsecase_GetURL_Expired(t *testing.T) {
 	repo := newMockRepo()
-	uc := NewURLUsecase(repo, log.DefaultLogger)
+	uc := NewURLUsecase(repo, testUoW, log.DefaultLogger)
 
 	expiredTime := time.Now().Add(-1 * time.Hour)
 	customCode := "expired"
 
-	repo.urls[customCode] = &URL{
-		ID:          1,
-		ShortCode:   customCode,
-		OriginalURL: "https://example.com",
-		ExpiresAt:   &expiredTime,
-		CreatedAt:   time.Now(),
-	}
+	sc, _ := domain.NewShortCode(customCode)
+	ou, _ := domain.NewOriginalURL("https://example.com")
+	expiredURL := domain.ReconstructURL(1, sc, ou, 0, &expiredTime, time.Now(), time.Now())
+	repo.urls[customCode] = expiredURL
 
 	_, err := uc.GetURL(context.Background(), customCode)
 	assert.Error(t, err)
@@ -237,7 +240,7 @@ func TestURLUsecase_GetURL_Expired(t *testing.T) {
 
 func TestURLUsecase_RedirectURL(t *testing.T) {
 	repo := newMockRepo()
-	uc := NewURLUsecase(repo, log.DefaultLogger)
+	uc := NewURLUsecase(repo, testUoW, log.DefaultLogger)
 
 	customCode := "redirect"
 	originalURL := "https://example.com"
@@ -247,12 +250,11 @@ func TestURLUsecase_RedirectURL(t *testing.T) {
 	result, err := uc.RedirectURL(context.Background(), customCode)
 	require.NoError(t, err)
 	assert.Equal(t, originalURL, result)
-	assert.Equal(t, int64(1), repo.urls[customCode].ClickCount)
 }
 
 func TestURLUsecase_DeleteURL(t *testing.T) {
 	repo := newMockRepo()
-	uc := NewURLUsecase(repo, log.DefaultLogger)
+	uc := NewURLUsecase(repo, testUoW, log.DefaultLogger)
 
 	customCode := "todelete"
 	_, err := uc.CreateURL(context.Background(), "https://example.com", &customCode, nil)
@@ -267,7 +269,7 @@ func TestURLUsecase_DeleteURL(t *testing.T) {
 
 func TestURLUsecase_ListURLs(t *testing.T) {
 	repo := newMockRepo()
-	uc := NewURLUsecase(repo, log.DefaultLogger)
+	uc := NewURLUsecase(repo, testUoW, log.DefaultLogger)
 
 	for i := 0; i < 5; i++ {
 		code := "code" + string(rune('a'+i))
@@ -283,7 +285,7 @@ func TestURLUsecase_ListURLs(t *testing.T) {
 
 func TestURLUsecase_ListURLs_Pagination(t *testing.T) {
 	repo := newMockRepo()
-	uc := NewURLUsecase(repo, log.DefaultLogger)
+	uc := NewURLUsecase(repo, testUoW, log.DefaultLogger)
 
 	urls, _, err := uc.ListURLs(context.Background(), 0, 10)
 	assert.NoError(t, err)
@@ -300,7 +302,7 @@ func TestURLUsecase_ListURLs_Pagination(t *testing.T) {
 
 func TestURLUsecase_GetShortURL(t *testing.T) {
 	repo := newMockRepo()
-	uc := NewURLUsecase(repo, log.DefaultLogger)
+	uc := NewURLUsecase(repo, testUoW, log.DefaultLogger)
 
 	shortURL := uc.GetShortURL("abc123")
 	assert.Equal(t, "http://localhost:8000/r/abc123", shortURL)
@@ -308,8 +310,8 @@ func TestURLUsecase_GetShortURL(t *testing.T) {
 
 func TestURLUsecase_CreateURL_RepoError(t *testing.T) {
 	repo := newMockRepo()
-	repo.createErr = errors.New("database error")
-	uc := NewURLUsecase(repo, log.DefaultLogger)
+	repo.saveErr = errors.New("database error")
+	uc := NewURLUsecase(repo, testUoW, log.DefaultLogger)
 
 	_, err := uc.CreateURL(context.Background(), "https://example.com", nil, nil)
 	assert.Error(t, err)

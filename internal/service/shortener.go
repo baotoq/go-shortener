@@ -6,6 +6,7 @@ import (
 
 	v1 "go-shortener/api/shortener/v1"
 	"go-shortener/internal/biz"
+	"go-shortener/internal/domain"
 
 	"github.com/samber/lo"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -72,14 +73,14 @@ func (s *ShortenerService) GetURLStats(ctx context.Context, req *v1.GetURLStatsR
 	}
 
 	reply := &v1.GetURLStatsReply{
-		ShortCode:   u.ShortCode,
-		OriginalUrl: u.OriginalURL,
-		ClickCount:  u.ClickCount,
-		CreatedAt:   timestamppb.New(u.CreatedAt),
+		ShortCode:   u.ShortCode().String(),
+		OriginalUrl: u.OriginalURL().String(),
+		ClickCount:  u.ClickCount(),
+		CreatedAt:   timestamppb.New(u.CreatedAt()),
 	}
 
-	if u.ExpiresAt != nil {
-		reply.ExpiresAt = timestamppb.New(*u.ExpiresAt)
+	if u.ExpiresAt() != nil {
+		reply.ExpiresAt = timestamppb.New(*u.ExpiresAt())
 	}
 
 	return reply, nil
@@ -102,7 +103,7 @@ func (s *ShortenerService) ListURLs(ctx context.Context, req *v1.ListURLsRequest
 		return nil, err
 	}
 
-	urlInfos := lo.Map(urls, func(u *biz.URL, _ int) *v1.URLInfo {
+	urlInfos := lo.Map(urls, func(u *domain.URL, _ int) *v1.URLInfo {
 		return s.toURLInfo(u)
 	})
 
@@ -112,18 +113,18 @@ func (s *ShortenerService) ListURLs(ctx context.Context, req *v1.ListURLsRequest
 	}, nil
 }
 
-func (s *ShortenerService) toURLInfo(u *biz.URL) *v1.URLInfo {
+func (s *ShortenerService) toURLInfo(u *domain.URL) *v1.URLInfo {
 	info := &v1.URLInfo{
-		Id:          u.ID,
-		ShortCode:   u.ShortCode,
-		OriginalUrl: u.OriginalURL,
-		ShortUrl:    s.uc.GetShortURL(u.ShortCode),
-		ClickCount:  u.ClickCount,
-		CreatedAt:   timestamppb.New(u.CreatedAt),
+		Id:          u.ID(),
+		ShortCode:   u.ShortCode().String(),
+		OriginalUrl: u.OriginalURL().String(),
+		ShortUrl:    s.uc.GetShortURL(u.ShortCode().String()),
+		ClickCount:  u.ClickCount(),
+		CreatedAt:   timestamppb.New(u.CreatedAt()),
 	}
 
-	if u.ExpiresAt != nil {
-		info.ExpiresAt = timestamppb.New(*u.ExpiresAt)
+	if u.ExpiresAt() != nil {
+		info.ExpiresAt = timestamppb.New(*u.ExpiresAt())
 	}
 
 	return info
