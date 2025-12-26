@@ -1,5 +1,7 @@
 package domain
 
+//go:generate go run github.com/vektra/mockery/v2@latest --name=URLRepository --output=../mocks --outpkg=mocks --with-expecter
+
 import (
 	"context"
 )

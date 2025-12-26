@@ -1,12 +1,17 @@
 package domain
 
-import "errors"
+import (
+	"errors"
+
+	"go-shortener/internal/domain/valueobject"
+)
 
 var (
 	ErrURLNotFound     = errors.New("url not found")
 	ErrURLExpired      = errors.New("url has expired")
-	ErrInvalidURL      = errors.New("invalid url format")
 	ErrShortCodeExists = errors.New("short code already exists")
-	ErrInvalidCode     = errors.New("invalid short code format")
+
+	// Re-export value object errors for convenience.
+	ErrInvalidURL  = valueobject.ErrInvalidURL
+	ErrInvalidCode = valueobject.ErrInvalidCode
 )
-// test
