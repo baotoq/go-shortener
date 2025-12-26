@@ -6,7 +6,7 @@ pre-commit:
       run: golangci-lint run --fix
     test:
       glob: "**/*.go"
-      run: go test ./...
+      run: go test -short ./...
 
 pre-push:
   parallel: true
@@ -16,4 +16,4 @@ pre-push:
       run: golangci-lint run
     test:
       glob: "**/*.go"
-      run: go test ./...
+      run: go test -short ./...

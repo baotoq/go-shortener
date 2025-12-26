@@ -98,10 +98,10 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 		s.redisClient.Close()
 	}
 	if s.pgContainer != nil {
-		s.pgContainer.Terminate(s.ctx)
+		_ = s.pgContainer.Terminate(s.ctx)
 	}
 	if s.redisContainer != nil {
-		s.redisContainer.Terminate(s.ctx)
+		_ = s.redisContainer.Terminate(s.ctx)
 	}
 }
 
