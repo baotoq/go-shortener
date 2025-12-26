@@ -16,10 +16,11 @@ This project implements a full-featured URL shortener with:
 
 - **Framework**: [Kratos](https://go-kratos.dev/) v2.9.2
 - **ORM**: [Ent](https://entgo.io/) (Facebook's entity framework)
-- **Database**: SQLite3
+- **Database**: SQLite3 (dev), PostgreSQL (production/tests)
 - **Cache**: Redis (optional)
 - **DI**: Google Wire
 - **API**: Protocol Buffers (gRPC + HTTP)
+- **Testing**: Testify, Mockery, Testcontainers
 
 ## Project Structure
 
@@ -40,14 +41,20 @@ go-shortener/
 ├── internal/
 │   ├── biz/               # Business logic layer
 │   │   ├── url.go         # URL usecase
-│   │   └── url_test.go    # Unit tests
+│   │   └── url_test.go    # Unit tests (mockery)
 │   ├── data/              # Data access layer
 │   │   ├── data.go        # DB/Redis initialization
-│   │   ├── url.go         # URL repository
-│   │   └── url_test.go    # Unit tests
+│   │   ├── url_repo.go    # URL repository
+│   │   ├── url_repo_test.go    # Repository tests (testcontainers)
+│   │   └── integration_test.go # Integration tests (testcontainers)
+│   ├── domain/            # Domain layer (DDD)
+│   │   ├── url.go         # URL aggregate
+│   │   ├── repository.go  # Repository interface
+│   │   └── uow.go         # Unit of Work interface
+│   ├── mocks/             # Generated mocks (mockery)
 │   ├── service/           # Service layer (handlers)
 │   │   ├── shortener.go   # gRPC/HTTP handlers
-│   │   └── shortener_test.go
+│   │   └── shortener_test.go   # Service tests (mockery)
 │   ├── server/            # Server configuration
 │   │   ├── http.go        # HTTP server
 │   │   └── grpc.go        # gRPC server
@@ -96,7 +103,7 @@ go run ./cmd/go-shortener -conf ./configs/config.yaml
 ### Testing
 
 ```bash
-# Run all tests
+# Run all tests (requires Docker for testcontainers)
 go test ./...
 
 # Run tests with verbose output
@@ -109,7 +116,16 @@ go test ./internal/service/... -v
 
 # Run with coverage
 go test ./... -cover
+
+# Generate mocks (on-demand, uses installed mockery binary)
+go generate ./internal/domain/...
 ```
+
+### Test Structure
+
+- **Unit tests**: Use mockery-generated mocks
+- **Integration tests**: Use testcontainers (PostgreSQL, Redis)
+- **AAA pattern**: All tests follow Arrange-Act-Assert pattern
 
 ## API Endpoints
 
@@ -208,7 +224,9 @@ Custom error codes defined in `api/shortener/v1/error_reason.proto`:
 
 - Run `make generate` after modifying proto files
 - Run `go generate ./ent` after modifying Ent schema
+- Run `go generate ./internal/domain/...` to regenerate mocks
 - Redis is optional - the app works without it (caching disabled)
 - SQLite database file is created at `shortener.db` in the working directory
 - Short codes are 6 characters by default (base64 URL-safe)
 - Custom codes must be 3-20 characters (alphanumeric, underscore, hyphen)
+- Integration tests require Docker to be running (testcontainers)

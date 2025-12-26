@@ -1,10 +1,13 @@
-package data
+package biz
 
 import (
 	"go-shortener/internal/domain/event"
 
 	"github.com/go-kratos/kratos/v2/log"
 )
+
+// Compile-time interface check
+var _ event.Handler = (*LoggingEventHandler)(nil)
 
 // LoggingEventHandler logs all domain events.
 type LoggingEventHandler struct {

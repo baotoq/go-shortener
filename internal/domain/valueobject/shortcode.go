@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"regexp"
 	"strings"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 const (
@@ -23,8 +25,12 @@ type ShortCode struct {
 
 // NewShortCode creates a new ShortCode from a string, validating the format.
 func NewShortCode(code string) (ShortCode, error) {
-	if err := validateShortCode(code); err != nil {
-		return ShortCode{}, err
+	if err := validation.Validate(code,
+		validation.Required.Error("short code is required"),
+		validation.Length(MinCustomCodeLength, MaxCustomCodeLength).Error("short code must be 3-20 characters"),
+		validation.Match(shortCodeRegex).Error("short code must contain only alphanumeric characters, underscores, and hyphens"),
+	); err != nil {
+		return ShortCode{}, ErrInvalidCode
 	}
 	return ShortCode{value: code}, nil
 }
@@ -64,18 +70,3 @@ func (s ShortCode) Equals(other ShortCode) bool {
 	return s.value == other.value
 }
 
-func validateShortCode(code string) error {
-	if code == "" {
-		return ErrInvalidCode
-	}
-
-	if len(code) < MinCustomCodeLength || len(code) > MaxCustomCodeLength {
-		return ErrInvalidCode
-	}
-
-	if !shortCodeRegex.MatchString(code) {
-		return ErrInvalidCode
-	}
-
-	return nil
-}

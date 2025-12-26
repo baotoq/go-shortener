@@ -1,5 +1,8 @@
 package event
 
+// Compile-time interface check
+var _ Event = URLDeleted{}
+
 // URLDeleted is raised when a URL is deleted.
 type URLDeleted struct {
 	Base

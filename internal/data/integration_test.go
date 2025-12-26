@@ -112,9 +112,6 @@ func (s *IntegrationTestSuite) TearDownTest() {
 }
 
 func TestIntegrationTestSuite(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration tests in short mode")
-	}
 	suite.Run(t, new(IntegrationTestSuite))
 }
 

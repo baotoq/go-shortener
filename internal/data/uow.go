@@ -10,6 +10,9 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 )
 
+// Compile-time interface check
+var _ domain.UnitOfWork = (*unitOfWork)(nil)
+
 type txKey struct{}
 
 // unitOfWork implements domain.UnitOfWork with transaction support.

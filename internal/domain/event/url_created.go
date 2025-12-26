@@ -2,6 +2,9 @@ package event
 
 import "time"
 
+// Compile-time interface check
+var _ Event = URLCreated{}
+
 // URLCreated is raised when a new short URL is created.
 type URLCreated struct {
 	Base

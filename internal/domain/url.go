@@ -6,6 +6,12 @@ import (
 	"go-shortener/internal/domain/event"
 )
 
+// Compile-time interface checks
+var (
+	_ AggregateRoot = (*URL)(nil)
+	_ AggregateRoot = (*DeletedURLAggregate)(nil)
+)
+
 // URL is the aggregate root representing a shortened URL.
 // It encapsulates all business logic related to URL shortening.
 type URL struct {

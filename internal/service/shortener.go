@@ -12,6 +12,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// Compile-time interface check
+var _ v1.ShortenerServer = (*ShortenerService)(nil)
+
 type ShortenerService struct {
 	v1.UnimplementedShortenerServer
 
@@ -72,18 +75,13 @@ func (s *ShortenerService) GetURLStats(ctx context.Context, req *v1.GetURLStatsR
 		return nil, err
 	}
 
-	reply := &v1.GetURLStatsReply{
+	return &v1.GetURLStatsReply{
 		ShortCode:   u.ShortCode().String(),
 		OriginalUrl: u.OriginalURL().String(),
 		ClickCount:  u.ClickCount(),
 		CreatedAt:   timestamppb.New(u.CreatedAt()),
-	}
-
-	if u.ExpiresAt() != nil {
-		reply.ExpiresAt = timestamppb.New(*u.ExpiresAt())
-	}
-
-	return reply, nil
+		ExpiresAt:   toTimestampPb(u.ExpiresAt()),
+	}, nil
 }
 
 func (s *ShortenerService) DeleteURL(ctx context.Context, req *v1.DeleteURLRequest) (*v1.DeleteURLReply, error) {
@@ -114,18 +112,20 @@ func (s *ShortenerService) ListURLs(ctx context.Context, req *v1.ListURLsRequest
 }
 
 func (s *ShortenerService) toURLInfo(u *domain.URL) *v1.URLInfo {
-	info := &v1.URLInfo{
+	return &v1.URLInfo{
 		Id:          u.ID(),
 		ShortCode:   u.ShortCode().String(),
 		OriginalUrl: u.OriginalURL().String(),
 		ShortUrl:    s.uc.GetShortURL(u.ShortCode().String()),
 		ClickCount:  u.ClickCount(),
 		CreatedAt:   timestamppb.New(u.CreatedAt()),
+		ExpiresAt:   toTimestampPb(u.ExpiresAt()),
 	}
+}
 
-	if u.ExpiresAt() != nil {
-		info.ExpiresAt = timestamppb.New(*u.ExpiresAt())
+func toTimestampPb(t *time.Time) *timestamppb.Timestamp {
+	if t == nil {
+		return nil
 	}
-
-	return info
+	return timestamppb.New(*t)
 }

@@ -1,5 +1,8 @@
 package event
 
+// Compile-time interface check
+var _ Event = URLClicked{}
+
 // URLClicked is raised when a short URL is accessed for redirection.
 type URLClicked struct {
 	Base

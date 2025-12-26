@@ -1,5 +1,8 @@
 package event
 
+// Compile-time interface check
+var _ Event = ClickMilestoneReached{}
+
 // ClickMilestoneReached is raised when a URL reaches a click milestone.
 type ClickMilestoneReached struct {
 	Base

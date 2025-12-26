@@ -2,6 +2,9 @@ package event
 
 import "time"
 
+// Compile-time interface check
+var _ Event = URLExpired{}
+
 // URLExpired is raised when a URL has expired.
 type URLExpired struct {
 	Base

@@ -14,6 +14,9 @@ import (
 	"github.com/samber/lo"
 )
 
+// Compile-time interface check
+var _ domain.URLRepository = (*urlRepo)(nil)
+
 const (
 	urlCachePrefix = "url:"
 	urlCacheTTL    = 10 * time.Minute

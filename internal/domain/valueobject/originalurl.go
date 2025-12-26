@@ -2,6 +2,9 @@ package valueobject
 
 import (
 	"net/url"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
 // OriginalURL is a value object representing the original URL to be shortened.
@@ -13,7 +16,10 @@ type OriginalURL struct {
 
 // NewOriginalURL creates a new OriginalURL from a string, validating the format.
 func NewOriginalURL(rawURL string) (OriginalURL, error) {
-	if rawURL == "" {
+	if err := validation.Validate(rawURL,
+		validation.Required.Error("URL is required"),
+		is.URL.Error("invalid URL format"),
+	); err != nil {
 		return OriginalURL{}, ErrInvalidURL
 	}
 
