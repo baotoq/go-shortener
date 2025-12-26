@@ -12,15 +12,27 @@ import (
 	"go-shortener/internal/mocks"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// setupUoWMock configures UnitOfWork mock to execute the transaction function
-func setupUoWMock(uow *mocks.UnitOfWork) {
-	uow.EXPECT().
+type ShortenerServiceTestSuite struct {
+	suite.Suite
+	repo *mocks.URLRepository
+	uow  *mocks.UnitOfWork
+	sut  *ShortenerService
+}
+
+func (s *ShortenerServiceTestSuite) SetupTest() {
+	s.repo = mocks.NewURLRepository(s.T())
+	s.uow = mocks.NewUnitOfWork(s.T())
+	uc := biz.NewURLUsecase(s.repo, s.uow, log.DefaultLogger)
+	s.sut = NewShortenerService(uc)
+}
+
+func (s *ShortenerServiceTestSuite) setupUoWMock() {
+	s.uow.EXPECT().
 		Do(mock.Anything, mock.Anything, mock.Anything).
 		RunAndReturn(func(ctx context.Context, fn func(context.Context) error, _ ...domain.AggregateRoot) error {
 			return fn(ctx)
@@ -28,43 +40,35 @@ func setupUoWMock(uow *mocks.UnitOfWork) {
 		Maybe()
 }
 
-func TestShortenerService_CreateURL(t *testing.T) {
+func TestShortenerServiceTestSuite(t *testing.T) {
+	suite.Run(t, new(ShortenerServiceTestSuite))
+}
+
+func (s *ShortenerServiceTestSuite) TestCreateURL() {
 	// Arrange
-	repo := mocks.NewURLRepository(t)
-	uow := mocks.NewUnitOfWork(t)
-
-	repo.EXPECT().Exists(mock.Anything, mock.Anything).Return(false, nil).Maybe()
-	repo.EXPECT().Save(mock.Anything, mock.Anything).Return(nil)
-	setupUoWMock(uow)
-
-	uc := biz.NewURLUsecase(repo, uow, log.DefaultLogger)
-	svc := NewShortenerService(uc)
+	s.repo.EXPECT().Exists(mock.Anything, mock.Anything).Return(false, nil).Maybe()
+	s.repo.EXPECT().Save(mock.Anything, mock.Anything).Return(nil)
+	s.setupUoWMock()
 
 	req := &v1.CreateURLRequest{
 		OriginalUrl: "https://example.com",
 	}
 
 	// Act
-	resp, err := svc.CreateURL(context.Background(), req)
+	resp, err := s.sut.CreateURL(context.Background(), req)
 
 	// Assert
-	require.NoError(t, err)
-	require.NotNil(t, resp.Url)
-	assert.Equal(t, "https://example.com", resp.Url.OriginalUrl)
-	assert.NotEmpty(t, resp.Url.ShortCode)
+	s.Require().NoError(err)
+	s.Require().NotNil(resp.Url)
+	s.Equal("https://example.com", resp.Url.OriginalUrl)
+	s.NotEmpty(resp.Url.ShortCode)
 }
 
-func TestShortenerService_CreateURL_WithCustomCode(t *testing.T) {
+func (s *ShortenerServiceTestSuite) TestCreateURL_WithCustomCode() {
 	// Arrange
-	repo := mocks.NewURLRepository(t)
-	uow := mocks.NewUnitOfWork(t)
-
-	repo.EXPECT().Exists(mock.Anything, mock.Anything).Return(false, nil)
-	repo.EXPECT().Save(mock.Anything, mock.Anything).Return(nil)
-	setupUoWMock(uow)
-
-	uc := biz.NewURLUsecase(repo, uow, log.DefaultLogger)
-	svc := NewShortenerService(uc)
+	s.repo.EXPECT().Exists(mock.Anything, mock.Anything).Return(false, nil)
+	s.repo.EXPECT().Save(mock.Anything, mock.Anything).Return(nil)
+	s.setupUoWMock()
 
 	customCode := "mycode"
 	req := &v1.CreateURLRequest{
@@ -73,24 +77,18 @@ func TestShortenerService_CreateURL_WithCustomCode(t *testing.T) {
 	}
 
 	// Act
-	resp, err := svc.CreateURL(context.Background(), req)
+	resp, err := s.sut.CreateURL(context.Background(), req)
 
 	// Assert
-	require.NoError(t, err)
-	assert.Equal(t, "mycode", resp.Url.ShortCode)
+	s.Require().NoError(err)
+	s.Equal("mycode", resp.Url.ShortCode)
 }
 
-func TestShortenerService_CreateURL_WithExpiry(t *testing.T) {
+func (s *ShortenerServiceTestSuite) TestCreateURL_WithExpiry() {
 	// Arrange
-	repo := mocks.NewURLRepository(t)
-	uow := mocks.NewUnitOfWork(t)
-
-	repo.EXPECT().Exists(mock.Anything, mock.Anything).Return(false, nil).Maybe()
-	repo.EXPECT().Save(mock.Anything, mock.Anything).Return(nil)
-	setupUoWMock(uow)
-
-	uc := biz.NewURLUsecase(repo, uow, log.DefaultLogger)
-	svc := NewShortenerService(uc)
+	s.repo.EXPECT().Exists(mock.Anything, mock.Anything).Return(false, nil).Maybe()
+	s.repo.EXPECT().Save(mock.Anything, mock.Anything).Return(nil)
+	s.setupUoWMock()
 
 	expiresAt := timestamppb.New(time.Now().Add(24 * time.Hour))
 	req := &v1.CreateURLRequest{
@@ -99,164 +97,124 @@ func TestShortenerService_CreateURL_WithExpiry(t *testing.T) {
 	}
 
 	// Act
-	resp, err := svc.CreateURL(context.Background(), req)
+	resp, err := s.sut.CreateURL(context.Background(), req)
 
 	// Assert
-	require.NoError(t, err)
-	assert.NotNil(t, resp.Url.ExpiresAt)
+	s.Require().NoError(err)
+	s.NotNil(resp.Url.ExpiresAt)
 }
 
-func TestShortenerService_CreateURL_InvalidURL(t *testing.T) {
+func (s *ShortenerServiceTestSuite) TestCreateURL_InvalidURL() {
 	// Arrange
-	repo := mocks.NewURLRepository(t)
-	uow := mocks.NewUnitOfWork(t)
-
-	uc := biz.NewURLUsecase(repo, uow, log.DefaultLogger)
-	svc := NewShortenerService(uc)
-
 	req := &v1.CreateURLRequest{
 		OriginalUrl: "invalid-url",
 	}
 
 	// Act
-	_, err := svc.CreateURL(context.Background(), req)
+	_, err := s.sut.CreateURL(context.Background(), req)
 
 	// Assert
-	assert.Error(t, err)
+	s.Error(err)
 }
 
-func TestShortenerService_GetURL(t *testing.T) {
+func (s *ShortenerServiceTestSuite) TestGetURL() {
 	// Arrange
-	repo := mocks.NewURLRepository(t)
-	uow := mocks.NewUnitOfWork(t)
-
 	sc, _ := domain.NewShortCode("gettest")
 	ou, _ := domain.NewOriginalURL("https://example.com")
 	expectedURL := domain.ReconstructURL(1, sc, ou, 0, nil, time.Now(), time.Now())
 
-	repo.EXPECT().FindByShortCode(mock.Anything, sc).Return(expectedURL, nil)
-
-	uc := biz.NewURLUsecase(repo, uow, log.DefaultLogger)
-	svc := NewShortenerService(uc)
+	s.repo.EXPECT().FindByShortCode(mock.Anything, sc).Return(expectedURL, nil)
 
 	req := &v1.GetURLRequest{
 		ShortCode: "gettest",
 	}
 
 	// Act
-	resp, err := svc.GetURL(context.Background(), req)
+	resp, err := s.sut.GetURL(context.Background(), req)
 
 	// Assert
-	require.NoError(t, err)
-	assert.Equal(t, "gettest", resp.Url.ShortCode)
+	s.Require().NoError(err)
+	s.Equal("gettest", resp.Url.ShortCode)
 }
 
-func TestShortenerService_GetURL_NotFound(t *testing.T) {
+func (s *ShortenerServiceTestSuite) TestGetURL_NotFound() {
 	// Arrange
-	repo := mocks.NewURLRepository(t)
-	uow := mocks.NewUnitOfWork(t)
-
 	sc, _ := domain.NewShortCode("nonexistent")
-	repo.EXPECT().FindByShortCode(mock.Anything, sc).Return(nil, nil)
-
-	uc := biz.NewURLUsecase(repo, uow, log.DefaultLogger)
-	svc := NewShortenerService(uc)
+	s.repo.EXPECT().FindByShortCode(mock.Anything, sc).Return(nil, nil)
 
 	req := &v1.GetURLRequest{
 		ShortCode: "nonexistent",
 	}
 
 	// Act
-	_, err := svc.GetURL(context.Background(), req)
+	_, err := s.sut.GetURL(context.Background(), req)
 
 	// Assert
-	assert.Error(t, err)
+	s.Error(err)
 }
 
-func TestShortenerService_RedirectURL(t *testing.T) {
+func (s *ShortenerServiceTestSuite) TestRedirectURL() {
 	// Arrange
-	repo := mocks.NewURLRepository(t)
-	uow := mocks.NewUnitOfWork(t)
-
 	sc, _ := domain.NewShortCode("redirect")
 	ou, _ := domain.NewOriginalURL("https://example.com")
 	expectedURL := domain.ReconstructURL(1, sc, ou, 0, nil, time.Now(), time.Now())
 
-	repo.EXPECT().FindByShortCode(mock.Anything, sc).Return(expectedURL, nil)
-	repo.EXPECT().IncrementClickCount(mock.Anything, sc).Return(nil)
-	setupUoWMock(uow)
-
-	uc := biz.NewURLUsecase(repo, uow, log.DefaultLogger)
-	svc := NewShortenerService(uc)
+	s.repo.EXPECT().FindByShortCode(mock.Anything, sc).Return(expectedURL, nil)
+	s.setupUoWMock()
 
 	req := &v1.RedirectURLRequest{
 		ShortCode: "redirect",
 	}
 
 	// Act
-	resp, err := svc.RedirectURL(context.Background(), req)
+	resp, err := s.sut.RedirectURL(context.Background(), req)
 
 	// Assert
-	require.NoError(t, err)
-	assert.Equal(t, "https://example.com", resp.OriginalUrl)
+	s.Require().NoError(err)
+	s.Equal("https://example.com", resp.OriginalUrl)
 }
 
-func TestShortenerService_GetURLStats(t *testing.T) {
+func (s *ShortenerServiceTestSuite) TestGetURLStats() {
 	// Arrange
-	repo := mocks.NewURLRepository(t)
-	uow := mocks.NewUnitOfWork(t)
-
 	sc, _ := domain.NewShortCode("stats1")
 	ou, _ := domain.NewOriginalURL("https://example.com")
 	expectedURL := domain.ReconstructURL(1, sc, ou, 5, nil, time.Now(), time.Now())
 
-	repo.EXPECT().FindByShortCode(mock.Anything, sc).Return(expectedURL, nil)
-
-	uc := biz.NewURLUsecase(repo, uow, log.DefaultLogger)
-	svc := NewShortenerService(uc)
+	s.repo.EXPECT().FindByShortCode(mock.Anything, sc).Return(expectedURL, nil)
 
 	req := &v1.GetURLStatsRequest{
 		ShortCode: "stats1",
 	}
 
 	// Act
-	resp, err := svc.GetURLStats(context.Background(), req)
+	resp, err := s.sut.GetURLStats(context.Background(), req)
 
 	// Assert
-	require.NoError(t, err)
-	assert.Equal(t, "stats1", resp.ShortCode)
-	assert.Equal(t, int64(5), resp.ClickCount)
+	s.Require().NoError(err)
+	s.Equal("stats1", resp.ShortCode)
+	s.Equal(int64(5), resp.ClickCount)
 }
 
-func TestShortenerService_DeleteURL(t *testing.T) {
+func (s *ShortenerServiceTestSuite) TestDeleteURL() {
 	// Arrange
-	repo := mocks.NewURLRepository(t)
-	uow := mocks.NewUnitOfWork(t)
-
 	sc, _ := domain.NewShortCode("todelete")
-	repo.EXPECT().Delete(mock.Anything, sc).Return(nil)
-	setupUoWMock(uow)
-
-	uc := biz.NewURLUsecase(repo, uow, log.DefaultLogger)
-	svc := NewShortenerService(uc)
+	s.repo.EXPECT().Delete(mock.Anything, sc).Return(nil)
+	s.setupUoWMock()
 
 	req := &v1.DeleteURLRequest{
 		ShortCode: "todelete",
 	}
 
 	// Act
-	resp, err := svc.DeleteURL(context.Background(), req)
+	resp, err := s.sut.DeleteURL(context.Background(), req)
 
 	// Assert
-	require.NoError(t, err)
-	assert.True(t, resp.Success)
+	s.Require().NoError(err)
+	s.True(resp.Success)
 }
 
-func TestShortenerService_ListURLs(t *testing.T) {
+func (s *ShortenerServiceTestSuite) TestListURLs() {
 	// Arrange
-	repo := mocks.NewURLRepository(t)
-	uow := mocks.NewUnitOfWork(t)
-
 	sc1, _ := domain.NewShortCode("lista1")
 	ou1, _ := domain.NewOriginalURL("https://example1.com")
 	url1 := domain.ReconstructURL(1, sc1, ou1, 0, nil, time.Now(), time.Now())
@@ -266,10 +224,7 @@ func TestShortenerService_ListURLs(t *testing.T) {
 	url2 := domain.ReconstructURL(2, sc2, ou2, 0, nil, time.Now(), time.Now())
 
 	expectedURLs := []*domain.URL{url1, url2}
-	repo.EXPECT().FindAll(mock.Anything, 1, 10).Return(expectedURLs, 2, nil)
-
-	uc := biz.NewURLUsecase(repo, uow, log.DefaultLogger)
-	svc := NewShortenerService(uc)
+	s.repo.EXPECT().FindAll(mock.Anything, 1, 10).Return(expectedURLs, 2, nil)
 
 	req := &v1.ListURLsRequest{
 		Page:     1,
@@ -277,45 +232,33 @@ func TestShortenerService_ListURLs(t *testing.T) {
 	}
 
 	// Act
-	resp, err := svc.ListURLs(context.Background(), req)
+	resp, err := s.sut.ListURLs(context.Background(), req)
 
 	// Assert
-	require.NoError(t, err)
-	assert.Len(t, resp.Urls, 2)
-	assert.Equal(t, int32(2), resp.Total)
+	s.Require().NoError(err)
+	s.Len(resp.Urls, 2)
+	s.Equal(int32(2), resp.Total)
 }
 
-func TestShortenerService_CreateURL_RepoError(t *testing.T) {
+func (s *ShortenerServiceTestSuite) TestCreateURL_RepoError() {
 	// Arrange
-	repo := mocks.NewURLRepository(t)
-	uow := mocks.NewUnitOfWork(t)
-
-	repo.EXPECT().Exists(mock.Anything, mock.Anything).Return(false, nil).Maybe()
-	repo.EXPECT().Save(mock.Anything, mock.Anything).Return(errors.New("database error"))
-	setupUoWMock(uow)
-
-	uc := biz.NewURLUsecase(repo, uow, log.DefaultLogger)
-	svc := NewShortenerService(uc)
+	s.repo.EXPECT().Exists(mock.Anything, mock.Anything).Return(false, nil).Maybe()
+	s.repo.EXPECT().Save(mock.Anything, mock.Anything).Return(errors.New("database error"))
+	s.setupUoWMock()
 
 	req := &v1.CreateURLRequest{
 		OriginalUrl: "https://example.com",
 	}
 
 	// Act
-	_, err := svc.CreateURL(context.Background(), req)
+	_, err := s.sut.CreateURL(context.Background(), req)
 
 	// Assert
-	assert.Error(t, err)
+	s.Error(err)
 }
 
-func TestShortenerService_toURLInfo(t *testing.T) {
+func (s *ShortenerServiceTestSuite) TestToURLInfo() {
 	// Arrange
-	repo := mocks.NewURLRepository(t)
-	uow := mocks.NewUnitOfWork(t)
-
-	uc := biz.NewURLUsecase(repo, uow, log.DefaultLogger)
-	svc := NewShortenerService(uc)
-
 	now := time.Now()
 	expiresAt := now.Add(24 * time.Hour)
 
@@ -324,13 +267,13 @@ func TestShortenerService_toURLInfo(t *testing.T) {
 	u := domain.ReconstructURL(1, sc, ou, 10, &expiresAt, now, now)
 
 	// Act
-	info := svc.toURLInfo(u)
+	info := s.sut.toURLInfo(u)
 
 	// Assert
-	assert.Equal(t, int64(1), info.Id)
-	assert.Equal(t, "testxx", info.ShortCode)
-	assert.Equal(t, "https://example.com", info.OriginalUrl)
-	assert.Equal(t, int64(10), info.ClickCount)
-	assert.NotEmpty(t, info.ShortUrl)
-	assert.NotNil(t, info.ExpiresAt)
+	s.Equal(int64(1), info.Id)
+	s.Equal("testxx", info.ShortCode)
+	s.Equal("https://example.com", info.OriginalUrl)
+	s.Equal(int64(10), info.ClickCount)
+	s.NotEmpty(info.ShortUrl)
+	s.NotNil(info.ExpiresAt)
 }

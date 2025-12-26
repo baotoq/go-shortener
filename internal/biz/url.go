@@ -132,17 +132,16 @@ func (uc *URLUsecase) RedirectURLWithContext(ctx context.Context, shortCode, use
 		return "", err
 	}
 
-	sc, _ := domain.NewShortCode(shortCode)
-
-	// Record click event
+	// Record click - raises URLClicked event
+	// The ClickEventHandler will handle incrementing the click count
 	u.RecordClick(userAgent, ipAddress, referrer)
 
-	// Execute within transaction, pass aggregate for event dispatch
+	// Dispatch events via UoW
 	err = uc.uow.Do(ctx, func(txCtx context.Context) error {
-		return uc.repo.IncrementClickCount(txCtx, sc)
+		return nil
 	}, u)
 	if err != nil {
-		uc.log.WithContext(ctx).Warnf("Failed to record click for %s: %v", shortCode, err)
+		uc.log.WithContext(ctx).Warnf("Failed to dispatch click event for %s: %v", shortCode, err)
 	}
 
 	return u.OriginalURL().String(), nil
