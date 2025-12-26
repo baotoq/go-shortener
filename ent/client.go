@@ -252,8 +252,8 @@ func (c *URLClient) Update() *URLUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *URLClient) UpdateOne(_m *URL) *URLUpdateOne {
-	mutation := newURLMutation(c.config, OpUpdateOne, withURL(_m))
+func (c *URLClient) UpdateOne(u *URL) *URLUpdateOne {
+	mutation := newURLMutation(c.config, OpUpdateOne, withURL(u))
 	return &URLUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -270,8 +270,8 @@ func (c *URLClient) Delete() *URLDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *URLClient) DeleteOne(_m *URL) *URLDeleteOne {
-	return c.DeleteOneID(_m.ID)
+func (c *URLClient) DeleteOne(u *URL) *URLDeleteOne {
+	return c.DeleteOneID(u.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.

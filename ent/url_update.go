@@ -23,100 +23,100 @@ type URLUpdate struct {
 }
 
 // Where appends a list predicates to the URLUpdate builder.
-func (_u *URLUpdate) Where(ps ...predicate.URL) *URLUpdate {
-	_u.mutation.Where(ps...)
-	return _u
+func (uu *URLUpdate) Where(ps ...predicate.URL) *URLUpdate {
+	uu.mutation.Where(ps...)
+	return uu
 }
 
 // SetShortCode sets the "short_code" field.
-func (_u *URLUpdate) SetShortCode(v string) *URLUpdate {
-	_u.mutation.SetShortCode(v)
-	return _u
+func (uu *URLUpdate) SetShortCode(s string) *URLUpdate {
+	uu.mutation.SetShortCode(s)
+	return uu
 }
 
 // SetNillableShortCode sets the "short_code" field if the given value is not nil.
-func (_u *URLUpdate) SetNillableShortCode(v *string) *URLUpdate {
-	if v != nil {
-		_u.SetShortCode(*v)
+func (uu *URLUpdate) SetNillableShortCode(s *string) *URLUpdate {
+	if s != nil {
+		uu.SetShortCode(*s)
 	}
-	return _u
+	return uu
 }
 
 // SetOriginalURL sets the "original_url" field.
-func (_u *URLUpdate) SetOriginalURL(v string) *URLUpdate {
-	_u.mutation.SetOriginalURL(v)
-	return _u
+func (uu *URLUpdate) SetOriginalURL(s string) *URLUpdate {
+	uu.mutation.SetOriginalURL(s)
+	return uu
 }
 
 // SetNillableOriginalURL sets the "original_url" field if the given value is not nil.
-func (_u *URLUpdate) SetNillableOriginalURL(v *string) *URLUpdate {
-	if v != nil {
-		_u.SetOriginalURL(*v)
+func (uu *URLUpdate) SetNillableOriginalURL(s *string) *URLUpdate {
+	if s != nil {
+		uu.SetOriginalURL(*s)
 	}
-	return _u
+	return uu
 }
 
 // SetClickCount sets the "click_count" field.
-func (_u *URLUpdate) SetClickCount(v int64) *URLUpdate {
-	_u.mutation.ResetClickCount()
-	_u.mutation.SetClickCount(v)
-	return _u
+func (uu *URLUpdate) SetClickCount(i int64) *URLUpdate {
+	uu.mutation.ResetClickCount()
+	uu.mutation.SetClickCount(i)
+	return uu
 }
 
 // SetNillableClickCount sets the "click_count" field if the given value is not nil.
-func (_u *URLUpdate) SetNillableClickCount(v *int64) *URLUpdate {
-	if v != nil {
-		_u.SetClickCount(*v)
+func (uu *URLUpdate) SetNillableClickCount(i *int64) *URLUpdate {
+	if i != nil {
+		uu.SetClickCount(*i)
 	}
-	return _u
+	return uu
 }
 
-// AddClickCount adds value to the "click_count" field.
-func (_u *URLUpdate) AddClickCount(v int64) *URLUpdate {
-	_u.mutation.AddClickCount(v)
-	return _u
+// AddClickCount adds i to the "click_count" field.
+func (uu *URLUpdate) AddClickCount(i int64) *URLUpdate {
+	uu.mutation.AddClickCount(i)
+	return uu
 }
 
 // SetExpiresAt sets the "expires_at" field.
-func (_u *URLUpdate) SetExpiresAt(v time.Time) *URLUpdate {
-	_u.mutation.SetExpiresAt(v)
-	return _u
+func (uu *URLUpdate) SetExpiresAt(t time.Time) *URLUpdate {
+	uu.mutation.SetExpiresAt(t)
+	return uu
 }
 
 // SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
-func (_u *URLUpdate) SetNillableExpiresAt(v *time.Time) *URLUpdate {
-	if v != nil {
-		_u.SetExpiresAt(*v)
+func (uu *URLUpdate) SetNillableExpiresAt(t *time.Time) *URLUpdate {
+	if t != nil {
+		uu.SetExpiresAt(*t)
 	}
-	return _u
+	return uu
 }
 
 // ClearExpiresAt clears the value of the "expires_at" field.
-func (_u *URLUpdate) ClearExpiresAt() *URLUpdate {
-	_u.mutation.ClearExpiresAt()
-	return _u
+func (uu *URLUpdate) ClearExpiresAt() *URLUpdate {
+	uu.mutation.ClearExpiresAt()
+	return uu
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *URLUpdate) SetUpdatedAt(v time.Time) *URLUpdate {
-	_u.mutation.SetUpdatedAt(v)
-	return _u
+func (uu *URLUpdate) SetUpdatedAt(t time.Time) *URLUpdate {
+	uu.mutation.SetUpdatedAt(t)
+	return uu
 }
 
 // Mutation returns the URLMutation object of the builder.
-func (_u *URLUpdate) Mutation() *URLMutation {
-	return _u.mutation
+func (uu *URLUpdate) Mutation() *URLMutation {
+	return uu.mutation
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *URLUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (uu *URLUpdate) Save(ctx context.Context) (int, error) {
+	uu.defaults()
+	return withHooks(ctx, uu.sqlSave, uu.mutation, uu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *URLUpdate) SaveX(ctx context.Context) int {
-	affected, err := _u.Save(ctx)
+func (uu *URLUpdate) SaveX(ctx context.Context) int {
+	affected, err := uu.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -124,39 +124,39 @@ func (_u *URLUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *URLUpdate) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (uu *URLUpdate) Exec(ctx context.Context) error {
+	_, err := uu.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *URLUpdate) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (uu *URLUpdate) ExecX(ctx context.Context) {
+	if err := uu.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *URLUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
+func (uu *URLUpdate) defaults() {
+	if _, ok := uu.mutation.UpdatedAt(); !ok {
 		v := url.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
+		uu.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *URLUpdate) check() error {
-	if v, ok := _u.mutation.ShortCode(); ok {
+func (uu *URLUpdate) check() error {
+	if v, ok := uu.mutation.ShortCode(); ok {
 		if err := url.ShortCodeValidator(v); err != nil {
 			return &ValidationError{Name: "short_code", err: fmt.Errorf(`ent: validator failed for field "URL.short_code": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.OriginalURL(); ok {
+	if v, ok := uu.mutation.OriginalURL(); ok {
 		if err := url.OriginalURLValidator(v); err != nil {
 			return &ValidationError{Name: "original_url", err: fmt.Errorf(`ent: validator failed for field "URL.original_url": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.ClickCount(); ok {
+	if v, ok := uu.mutation.ClickCount(); ok {
 		if err := url.ClickCountValidator(v); err != nil {
 			return &ValidationError{Name: "click_count", err: fmt.Errorf(`ent: validator failed for field "URL.click_count": %w`, err)}
 		}
@@ -164,40 +164,40 @@ func (_u *URLUpdate) check() error {
 	return nil
 }
 
-func (_u *URLUpdate) sqlSave(ctx context.Context) (_node int, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
+func (uu *URLUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := uu.check(); err != nil {
+		return n, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(url.Table, url.Columns, sqlgraph.NewFieldSpec(url.FieldID, field.TypeInt))
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := uu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.ShortCode(); ok {
+	if value, ok := uu.mutation.ShortCode(); ok {
 		_spec.SetField(url.FieldShortCode, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.OriginalURL(); ok {
+	if value, ok := uu.mutation.OriginalURL(); ok {
 		_spec.SetField(url.FieldOriginalURL, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.ClickCount(); ok {
+	if value, ok := uu.mutation.ClickCount(); ok {
 		_spec.SetField(url.FieldClickCount, field.TypeInt64, value)
 	}
-	if value, ok := _u.mutation.AddedClickCount(); ok {
+	if value, ok := uu.mutation.AddedClickCount(); ok {
 		_spec.AddField(url.FieldClickCount, field.TypeInt64, value)
 	}
-	if value, ok := _u.mutation.ExpiresAt(); ok {
+	if value, ok := uu.mutation.ExpiresAt(); ok {
 		_spec.SetField(url.FieldExpiresAt, field.TypeTime, value)
 	}
-	if _u.mutation.ExpiresAtCleared() {
+	if uu.mutation.ExpiresAtCleared() {
 		_spec.ClearField(url.FieldExpiresAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.UpdatedAt(); ok {
+	if value, ok := uu.mutation.UpdatedAt(); ok {
 		_spec.SetField(url.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
+	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{url.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -205,8 +205,8 @@ func (_u *URLUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		return 0, err
 	}
-	_u.mutation.done = true
-	return _node, nil
+	uu.mutation.done = true
+	return n, nil
 }
 
 // URLUpdateOne is the builder for updating a single URL entity.
@@ -218,107 +218,107 @@ type URLUpdateOne struct {
 }
 
 // SetShortCode sets the "short_code" field.
-func (_u *URLUpdateOne) SetShortCode(v string) *URLUpdateOne {
-	_u.mutation.SetShortCode(v)
-	return _u
+func (uuo *URLUpdateOne) SetShortCode(s string) *URLUpdateOne {
+	uuo.mutation.SetShortCode(s)
+	return uuo
 }
 
 // SetNillableShortCode sets the "short_code" field if the given value is not nil.
-func (_u *URLUpdateOne) SetNillableShortCode(v *string) *URLUpdateOne {
-	if v != nil {
-		_u.SetShortCode(*v)
+func (uuo *URLUpdateOne) SetNillableShortCode(s *string) *URLUpdateOne {
+	if s != nil {
+		uuo.SetShortCode(*s)
 	}
-	return _u
+	return uuo
 }
 
 // SetOriginalURL sets the "original_url" field.
-func (_u *URLUpdateOne) SetOriginalURL(v string) *URLUpdateOne {
-	_u.mutation.SetOriginalURL(v)
-	return _u
+func (uuo *URLUpdateOne) SetOriginalURL(s string) *URLUpdateOne {
+	uuo.mutation.SetOriginalURL(s)
+	return uuo
 }
 
 // SetNillableOriginalURL sets the "original_url" field if the given value is not nil.
-func (_u *URLUpdateOne) SetNillableOriginalURL(v *string) *URLUpdateOne {
-	if v != nil {
-		_u.SetOriginalURL(*v)
+func (uuo *URLUpdateOne) SetNillableOriginalURL(s *string) *URLUpdateOne {
+	if s != nil {
+		uuo.SetOriginalURL(*s)
 	}
-	return _u
+	return uuo
 }
 
 // SetClickCount sets the "click_count" field.
-func (_u *URLUpdateOne) SetClickCount(v int64) *URLUpdateOne {
-	_u.mutation.ResetClickCount()
-	_u.mutation.SetClickCount(v)
-	return _u
+func (uuo *URLUpdateOne) SetClickCount(i int64) *URLUpdateOne {
+	uuo.mutation.ResetClickCount()
+	uuo.mutation.SetClickCount(i)
+	return uuo
 }
 
 // SetNillableClickCount sets the "click_count" field if the given value is not nil.
-func (_u *URLUpdateOne) SetNillableClickCount(v *int64) *URLUpdateOne {
-	if v != nil {
-		_u.SetClickCount(*v)
+func (uuo *URLUpdateOne) SetNillableClickCount(i *int64) *URLUpdateOne {
+	if i != nil {
+		uuo.SetClickCount(*i)
 	}
-	return _u
+	return uuo
 }
 
-// AddClickCount adds value to the "click_count" field.
-func (_u *URLUpdateOne) AddClickCount(v int64) *URLUpdateOne {
-	_u.mutation.AddClickCount(v)
-	return _u
+// AddClickCount adds i to the "click_count" field.
+func (uuo *URLUpdateOne) AddClickCount(i int64) *URLUpdateOne {
+	uuo.mutation.AddClickCount(i)
+	return uuo
 }
 
 // SetExpiresAt sets the "expires_at" field.
-func (_u *URLUpdateOne) SetExpiresAt(v time.Time) *URLUpdateOne {
-	_u.mutation.SetExpiresAt(v)
-	return _u
+func (uuo *URLUpdateOne) SetExpiresAt(t time.Time) *URLUpdateOne {
+	uuo.mutation.SetExpiresAt(t)
+	return uuo
 }
 
 // SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
-func (_u *URLUpdateOne) SetNillableExpiresAt(v *time.Time) *URLUpdateOne {
-	if v != nil {
-		_u.SetExpiresAt(*v)
+func (uuo *URLUpdateOne) SetNillableExpiresAt(t *time.Time) *URLUpdateOne {
+	if t != nil {
+		uuo.SetExpiresAt(*t)
 	}
-	return _u
+	return uuo
 }
 
 // ClearExpiresAt clears the value of the "expires_at" field.
-func (_u *URLUpdateOne) ClearExpiresAt() *URLUpdateOne {
-	_u.mutation.ClearExpiresAt()
-	return _u
+func (uuo *URLUpdateOne) ClearExpiresAt() *URLUpdateOne {
+	uuo.mutation.ClearExpiresAt()
+	return uuo
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *URLUpdateOne) SetUpdatedAt(v time.Time) *URLUpdateOne {
-	_u.mutation.SetUpdatedAt(v)
-	return _u
+func (uuo *URLUpdateOne) SetUpdatedAt(t time.Time) *URLUpdateOne {
+	uuo.mutation.SetUpdatedAt(t)
+	return uuo
 }
 
 // Mutation returns the URLMutation object of the builder.
-func (_u *URLUpdateOne) Mutation() *URLMutation {
-	return _u.mutation
+func (uuo *URLUpdateOne) Mutation() *URLMutation {
+	return uuo.mutation
 }
 
 // Where appends a list predicates to the URLUpdate builder.
-func (_u *URLUpdateOne) Where(ps ...predicate.URL) *URLUpdateOne {
-	_u.mutation.Where(ps...)
-	return _u
+func (uuo *URLUpdateOne) Where(ps ...predicate.URL) *URLUpdateOne {
+	uuo.mutation.Where(ps...)
+	return uuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *URLUpdateOne) Select(field string, fields ...string) *URLUpdateOne {
-	_u.fields = append([]string{field}, fields...)
-	return _u
+func (uuo *URLUpdateOne) Select(field string, fields ...string) *URLUpdateOne {
+	uuo.fields = append([]string{field}, fields...)
+	return uuo
 }
 
 // Save executes the query and returns the updated URL entity.
-func (_u *URLUpdateOne) Save(ctx context.Context) (*URL, error) {
-	_u.defaults()
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (uuo *URLUpdateOne) Save(ctx context.Context) (*URL, error) {
+	uuo.defaults()
+	return withHooks(ctx, uuo.sqlSave, uuo.mutation, uuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *URLUpdateOne) SaveX(ctx context.Context) *URL {
-	node, err := _u.Save(ctx)
+func (uuo *URLUpdateOne) SaveX(ctx context.Context) *URL {
+	node, err := uuo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -326,39 +326,39 @@ func (_u *URLUpdateOne) SaveX(ctx context.Context) *URL {
 }
 
 // Exec executes the query on the entity.
-func (_u *URLUpdateOne) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (uuo *URLUpdateOne) Exec(ctx context.Context) error {
+	_, err := uuo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *URLUpdateOne) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (uuo *URLUpdateOne) ExecX(ctx context.Context) {
+	if err := uuo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *URLUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
+func (uuo *URLUpdateOne) defaults() {
+	if _, ok := uuo.mutation.UpdatedAt(); !ok {
 		v := url.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
+		uuo.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *URLUpdateOne) check() error {
-	if v, ok := _u.mutation.ShortCode(); ok {
+func (uuo *URLUpdateOne) check() error {
+	if v, ok := uuo.mutation.ShortCode(); ok {
 		if err := url.ShortCodeValidator(v); err != nil {
 			return &ValidationError{Name: "short_code", err: fmt.Errorf(`ent: validator failed for field "URL.short_code": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.OriginalURL(); ok {
+	if v, ok := uuo.mutation.OriginalURL(); ok {
 		if err := url.OriginalURLValidator(v); err != nil {
 			return &ValidationError{Name: "original_url", err: fmt.Errorf(`ent: validator failed for field "URL.original_url": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.ClickCount(); ok {
+	if v, ok := uuo.mutation.ClickCount(); ok {
 		if err := url.ClickCountValidator(v); err != nil {
 			return &ValidationError{Name: "click_count", err: fmt.Errorf(`ent: validator failed for field "URL.click_count": %w`, err)}
 		}
@@ -366,17 +366,17 @@ func (_u *URLUpdateOne) check() error {
 	return nil
 }
 
-func (_u *URLUpdateOne) sqlSave(ctx context.Context) (_node *URL, err error) {
-	if err := _u.check(); err != nil {
+func (uuo *URLUpdateOne) sqlSave(ctx context.Context) (_node *URL, err error) {
+	if err := uuo.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(url.Table, url.Columns, sqlgraph.NewFieldSpec(url.FieldID, field.TypeInt))
-	id, ok := _u.mutation.ID()
+	id, ok := uuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "URL.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := _u.fields; len(fields) > 0 {
+	if fields := uuo.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, url.FieldID)
 		for _, f := range fields {
@@ -388,38 +388,38 @@ func (_u *URLUpdateOne) sqlSave(ctx context.Context) (_node *URL, err error) {
 			}
 		}
 	}
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := uuo.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.ShortCode(); ok {
+	if value, ok := uuo.mutation.ShortCode(); ok {
 		_spec.SetField(url.FieldShortCode, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.OriginalURL(); ok {
+	if value, ok := uuo.mutation.OriginalURL(); ok {
 		_spec.SetField(url.FieldOriginalURL, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.ClickCount(); ok {
+	if value, ok := uuo.mutation.ClickCount(); ok {
 		_spec.SetField(url.FieldClickCount, field.TypeInt64, value)
 	}
-	if value, ok := _u.mutation.AddedClickCount(); ok {
+	if value, ok := uuo.mutation.AddedClickCount(); ok {
 		_spec.AddField(url.FieldClickCount, field.TypeInt64, value)
 	}
-	if value, ok := _u.mutation.ExpiresAt(); ok {
+	if value, ok := uuo.mutation.ExpiresAt(); ok {
 		_spec.SetField(url.FieldExpiresAt, field.TypeTime, value)
 	}
-	if _u.mutation.ExpiresAtCleared() {
+	if uuo.mutation.ExpiresAtCleared() {
 		_spec.ClearField(url.FieldExpiresAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.UpdatedAt(); ok {
+	if value, ok := uuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(url.FieldUpdatedAt, field.TypeTime, value)
 	}
-	_node = &URL{config: _u.config}
+	_node = &URL{config: uuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, uuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{url.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -427,6 +427,6 @@ func (_u *URLUpdateOne) sqlSave(ctx context.Context) (_node *URL, err error) {
 		}
 		return nil, err
 	}
-	_u.mutation.done = true
+	uuo.mutation.done = true
 	return _node, nil
 }

@@ -2,9 +2,6 @@ package data
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"time"
 
 	"go-shortener/ent"
 	"go-shortener/ent/url"
@@ -17,11 +14,6 @@ import (
 // Compile-time interface check
 var _ domain.URLRepository = (*urlRepo)(nil)
 
-const (
-	urlCachePrefix = "url:"
-	urlCacheTTL    = 10 * time.Minute
-)
-
 // urlRepo implements domain.URLRepository interface.
 type urlRepo struct {
 	data *Data
@@ -29,7 +21,7 @@ type urlRepo struct {
 }
 
 // NewURLRepo creates a new URL repository.
-func NewURLRepo(data *Data, logger log.Logger) domain.URLRepository {
+func NewURLRepo(data *Data, logger log.Logger) *urlRepo {
 	return &urlRepo{
 		data: data,
 		log:  log.NewHelper(logger),
@@ -65,7 +57,6 @@ func (r *urlRepo) Save(ctx context.Context, u *domain.URL) error {
 		}
 
 		u.SetID(int64(created.ID))
-		r.cacheURL(ctx, u)
 		return nil
 	}
 
@@ -79,20 +70,11 @@ func (r *urlRepo) Save(ctx context.Context, u *domain.URL) error {
 	}
 
 	_, err := updateBuilder.Save(ctx)
-	if err != nil {
-		return err
-	}
-
-	r.invalidateCache(ctx, u.ShortCode().String())
-	return nil
+	return err
 }
 
 // FindByShortCode retrieves a URL by its short code.
 func (r *urlRepo) FindByShortCode(ctx context.Context, code domain.ShortCode) (*domain.URL, error) {
-	if cached := r.getCachedURL(ctx, code.String()); cached != nil {
-		return cached, nil
-	}
-
 	u, err := r.client(ctx).URL.Query().
 		Where(url.ShortCodeEQ(code.String())).
 		Only(ctx)
@@ -103,9 +85,7 @@ func (r *urlRepo) FindByShortCode(ctx context.Context, code domain.ShortCode) (*
 		return nil, err
 	}
 
-	result := r.entToDomain(u)
-	r.cacheURL(ctx, result)
-	return result, nil
+	return r.entToDomain(u), nil
 }
 
 // Delete removes a URL by its short code.
@@ -113,12 +93,7 @@ func (r *urlRepo) Delete(ctx context.Context, code domain.ShortCode) error {
 	_, err := r.client(ctx).URL.Delete().
 		Where(url.ShortCodeEQ(code.String())).
 		Exec(ctx)
-	if err != nil {
-		return err
-	}
-
-	r.invalidateCache(ctx, code.String())
-	return nil
+	return err
 }
 
 // FindAll retrieves all URLs with pagination.
@@ -149,13 +124,9 @@ func (r *urlRepo) FindAll(ctx context.Context, page, pageSize int) ([]*domain.UR
 
 // Exists checks if a short code already exists.
 func (r *urlRepo) Exists(ctx context.Context, code domain.ShortCode) (bool, error) {
-	exists, err := r.client(ctx).URL.Query().
+	return r.client(ctx).URL.Query().
 		Where(url.ShortCodeEQ(code.String())).
 		Exist(ctx)
-	if err != nil {
-		return false, err
-	}
-	return exists, nil
 }
 
 // IncrementClickCount atomically increments the click count.
@@ -164,12 +135,7 @@ func (r *urlRepo) IncrementClickCount(ctx context.Context, code domain.ShortCode
 		Where(url.ShortCodeEQ(code.String())).
 		AddClickCount(1).
 		Save(ctx)
-	if err != nil {
-		return err
-	}
-
-	r.invalidateCache(ctx, code.String())
-	return nil
+	return err
 }
 
 // entToDomain converts an Ent URL entity to a domain URL.
@@ -186,84 +152,4 @@ func (r *urlRepo) entToDomain(u *ent.URL) *domain.URL {
 		u.CreatedAt,
 		u.UpdatedAt,
 	)
-}
-
-func (r *urlRepo) cacheKey(shortCode string) string {
-	return fmt.Sprintf("%s%s", urlCachePrefix, shortCode)
-}
-
-type cachedURL struct {
-	ID          int64      `json:"id"`
-	ShortCode   string     `json:"short_code"`
-	OriginalURL string     `json:"original_url"`
-	ClickCount  int64      `json:"click_count"`
-	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
-}
-
-func (r *urlRepo) cacheURL(ctx context.Context, u *domain.URL) {
-	if r.data.rdb == nil {
-		return
-	}
-
-	cached := cachedURL{
-		ID:          u.ID(),
-		ShortCode:   u.ShortCode().String(),
-		OriginalURL: u.OriginalURL().String(),
-		ClickCount:  u.ClickCount(),
-		ExpiresAt:   u.ExpiresAt(),
-		CreatedAt:   u.CreatedAt(),
-		UpdatedAt:   u.UpdatedAt(),
-	}
-
-	data, err := json.Marshal(cached)
-	if err != nil {
-		r.log.WithContext(ctx).Warnf("Failed to marshal URL for cache: %v", err)
-		return
-	}
-
-	if err := r.data.rdb.Set(ctx, r.cacheKey(u.ShortCode().String()), data, urlCacheTTL).Err(); err != nil {
-		r.log.WithContext(ctx).Warnf("Failed to cache URL: %v", err)
-	}
-}
-
-func (r *urlRepo) getCachedURL(ctx context.Context, shortCode string) *domain.URL {
-	if r.data.rdb == nil {
-		return nil
-	}
-
-	data, err := r.data.rdb.Get(ctx, r.cacheKey(shortCode)).Bytes()
-	if err != nil {
-		return nil
-	}
-
-	var cached cachedURL
-	if err := json.Unmarshal(data, &cached); err != nil {
-		r.log.WithContext(ctx).Warnf("Failed to unmarshal cached URL: %v", err)
-		return nil
-	}
-
-	shortCodeVO, _ := domain.NewShortCode(cached.ShortCode)
-	originalURLVO, _ := domain.NewOriginalURL(cached.OriginalURL)
-
-	return domain.ReconstructURL(
-		cached.ID,
-		shortCodeVO,
-		originalURLVO,
-		cached.ClickCount,
-		cached.ExpiresAt,
-		cached.CreatedAt,
-		cached.UpdatedAt,
-	)
-}
-
-func (r *urlRepo) invalidateCache(ctx context.Context, shortCode string) {
-	if r.data.rdb == nil {
-		return
-	}
-
-	if err := r.data.rdb.Del(ctx, r.cacheKey(shortCode)).Err(); err != nil {
-		r.log.WithContext(ctx).Warnf("Failed to invalidate URL cache: %v", err)
-	}
 }

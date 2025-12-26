@@ -21,87 +21,87 @@ type URLCreate struct {
 }
 
 // SetShortCode sets the "short_code" field.
-func (_c *URLCreate) SetShortCode(v string) *URLCreate {
-	_c.mutation.SetShortCode(v)
-	return _c
+func (uc *URLCreate) SetShortCode(s string) *URLCreate {
+	uc.mutation.SetShortCode(s)
+	return uc
 }
 
 // SetOriginalURL sets the "original_url" field.
-func (_c *URLCreate) SetOriginalURL(v string) *URLCreate {
-	_c.mutation.SetOriginalURL(v)
-	return _c
+func (uc *URLCreate) SetOriginalURL(s string) *URLCreate {
+	uc.mutation.SetOriginalURL(s)
+	return uc
 }
 
 // SetClickCount sets the "click_count" field.
-func (_c *URLCreate) SetClickCount(v int64) *URLCreate {
-	_c.mutation.SetClickCount(v)
-	return _c
+func (uc *URLCreate) SetClickCount(i int64) *URLCreate {
+	uc.mutation.SetClickCount(i)
+	return uc
 }
 
 // SetNillableClickCount sets the "click_count" field if the given value is not nil.
-func (_c *URLCreate) SetNillableClickCount(v *int64) *URLCreate {
-	if v != nil {
-		_c.SetClickCount(*v)
+func (uc *URLCreate) SetNillableClickCount(i *int64) *URLCreate {
+	if i != nil {
+		uc.SetClickCount(*i)
 	}
-	return _c
+	return uc
 }
 
 // SetExpiresAt sets the "expires_at" field.
-func (_c *URLCreate) SetExpiresAt(v time.Time) *URLCreate {
-	_c.mutation.SetExpiresAt(v)
-	return _c
+func (uc *URLCreate) SetExpiresAt(t time.Time) *URLCreate {
+	uc.mutation.SetExpiresAt(t)
+	return uc
 }
 
 // SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
-func (_c *URLCreate) SetNillableExpiresAt(v *time.Time) *URLCreate {
-	if v != nil {
-		_c.SetExpiresAt(*v)
+func (uc *URLCreate) SetNillableExpiresAt(t *time.Time) *URLCreate {
+	if t != nil {
+		uc.SetExpiresAt(*t)
 	}
-	return _c
+	return uc
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (_c *URLCreate) SetCreatedAt(v time.Time) *URLCreate {
-	_c.mutation.SetCreatedAt(v)
-	return _c
+func (uc *URLCreate) SetCreatedAt(t time.Time) *URLCreate {
+	uc.mutation.SetCreatedAt(t)
+	return uc
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_c *URLCreate) SetNillableCreatedAt(v *time.Time) *URLCreate {
-	if v != nil {
-		_c.SetCreatedAt(*v)
+func (uc *URLCreate) SetNillableCreatedAt(t *time.Time) *URLCreate {
+	if t != nil {
+		uc.SetCreatedAt(*t)
 	}
-	return _c
+	return uc
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_c *URLCreate) SetUpdatedAt(v time.Time) *URLCreate {
-	_c.mutation.SetUpdatedAt(v)
-	return _c
+func (uc *URLCreate) SetUpdatedAt(t time.Time) *URLCreate {
+	uc.mutation.SetUpdatedAt(t)
+	return uc
 }
 
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (_c *URLCreate) SetNillableUpdatedAt(v *time.Time) *URLCreate {
-	if v != nil {
-		_c.SetUpdatedAt(*v)
+func (uc *URLCreate) SetNillableUpdatedAt(t *time.Time) *URLCreate {
+	if t != nil {
+		uc.SetUpdatedAt(*t)
 	}
-	return _c
+	return uc
 }
 
 // Mutation returns the URLMutation object of the builder.
-func (_c *URLCreate) Mutation() *URLMutation {
-	return _c.mutation
+func (uc *URLCreate) Mutation() *URLMutation {
+	return uc.mutation
 }
 
 // Save creates the URL in the database.
-func (_c *URLCreate) Save(ctx context.Context) (*URL, error) {
-	_c.defaults()
-	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
+func (uc *URLCreate) Save(ctx context.Context) (*URL, error) {
+	uc.defaults()
+	return withHooks(ctx, uc.sqlSave, uc.mutation, uc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (_c *URLCreate) SaveX(ctx context.Context) *URL {
-	v, err := _c.Save(ctx)
+func (uc *URLCreate) SaveX(ctx context.Context) *URL {
+	v, err := uc.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -109,75 +109,75 @@ func (_c *URLCreate) SaveX(ctx context.Context) *URL {
 }
 
 // Exec executes the query.
-func (_c *URLCreate) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (uc *URLCreate) Exec(ctx context.Context) error {
+	_, err := uc.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *URLCreate) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (uc *URLCreate) ExecX(ctx context.Context) {
+	if err := uc.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_c *URLCreate) defaults() {
-	if _, ok := _c.mutation.ClickCount(); !ok {
+func (uc *URLCreate) defaults() {
+	if _, ok := uc.mutation.ClickCount(); !ok {
 		v := url.DefaultClickCount
-		_c.mutation.SetClickCount(v)
+		uc.mutation.SetClickCount(v)
 	}
-	if _, ok := _c.mutation.CreatedAt(); !ok {
+	if _, ok := uc.mutation.CreatedAt(); !ok {
 		v := url.DefaultCreatedAt()
-		_c.mutation.SetCreatedAt(v)
+		uc.mutation.SetCreatedAt(v)
 	}
-	if _, ok := _c.mutation.UpdatedAt(); !ok {
+	if _, ok := uc.mutation.UpdatedAt(); !ok {
 		v := url.DefaultUpdatedAt()
-		_c.mutation.SetUpdatedAt(v)
+		uc.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_c *URLCreate) check() error {
-	if _, ok := _c.mutation.ShortCode(); !ok {
+func (uc *URLCreate) check() error {
+	if _, ok := uc.mutation.ShortCode(); !ok {
 		return &ValidationError{Name: "short_code", err: errors.New(`ent: missing required field "URL.short_code"`)}
 	}
-	if v, ok := _c.mutation.ShortCode(); ok {
+	if v, ok := uc.mutation.ShortCode(); ok {
 		if err := url.ShortCodeValidator(v); err != nil {
 			return &ValidationError{Name: "short_code", err: fmt.Errorf(`ent: validator failed for field "URL.short_code": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.OriginalURL(); !ok {
+	if _, ok := uc.mutation.OriginalURL(); !ok {
 		return &ValidationError{Name: "original_url", err: errors.New(`ent: missing required field "URL.original_url"`)}
 	}
-	if v, ok := _c.mutation.OriginalURL(); ok {
+	if v, ok := uc.mutation.OriginalURL(); ok {
 		if err := url.OriginalURLValidator(v); err != nil {
 			return &ValidationError{Name: "original_url", err: fmt.Errorf(`ent: validator failed for field "URL.original_url": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.ClickCount(); !ok {
+	if _, ok := uc.mutation.ClickCount(); !ok {
 		return &ValidationError{Name: "click_count", err: errors.New(`ent: missing required field "URL.click_count"`)}
 	}
-	if v, ok := _c.mutation.ClickCount(); ok {
+	if v, ok := uc.mutation.ClickCount(); ok {
 		if err := url.ClickCountValidator(v); err != nil {
 			return &ValidationError{Name: "click_count", err: fmt.Errorf(`ent: validator failed for field "URL.click_count": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.CreatedAt(); !ok {
+	if _, ok := uc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "URL.created_at"`)}
 	}
-	if _, ok := _c.mutation.UpdatedAt(); !ok {
+	if _, ok := uc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "URL.updated_at"`)}
 	}
 	return nil
 }
 
-func (_c *URLCreate) sqlSave(ctx context.Context) (*URL, error) {
-	if err := _c.check(); err != nil {
+func (uc *URLCreate) sqlSave(ctx context.Context) (*URL, error) {
+	if err := uc.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := _c.createSpec()
-	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
+	_node, _spec := uc.createSpec()
+	if err := sqlgraph.CreateNode(ctx, uc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -185,37 +185,37 @@ func (_c *URLCreate) sqlSave(ctx context.Context) (*URL, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
-	_c.mutation.id = &_node.ID
-	_c.mutation.done = true
+	uc.mutation.id = &_node.ID
+	uc.mutation.done = true
 	return _node, nil
 }
 
-func (_c *URLCreate) createSpec() (*URL, *sqlgraph.CreateSpec) {
+func (uc *URLCreate) createSpec() (*URL, *sqlgraph.CreateSpec) {
 	var (
-		_node = &URL{config: _c.config}
+		_node = &URL{config: uc.config}
 		_spec = sqlgraph.NewCreateSpec(url.Table, sqlgraph.NewFieldSpec(url.FieldID, field.TypeInt))
 	)
-	if value, ok := _c.mutation.ShortCode(); ok {
+	if value, ok := uc.mutation.ShortCode(); ok {
 		_spec.SetField(url.FieldShortCode, field.TypeString, value)
 		_node.ShortCode = value
 	}
-	if value, ok := _c.mutation.OriginalURL(); ok {
+	if value, ok := uc.mutation.OriginalURL(); ok {
 		_spec.SetField(url.FieldOriginalURL, field.TypeString, value)
 		_node.OriginalURL = value
 	}
-	if value, ok := _c.mutation.ClickCount(); ok {
+	if value, ok := uc.mutation.ClickCount(); ok {
 		_spec.SetField(url.FieldClickCount, field.TypeInt64, value)
 		_node.ClickCount = value
 	}
-	if value, ok := _c.mutation.ExpiresAt(); ok {
+	if value, ok := uc.mutation.ExpiresAt(); ok {
 		_spec.SetField(url.FieldExpiresAt, field.TypeTime, value)
 		_node.ExpiresAt = &value
 	}
-	if value, ok := _c.mutation.CreatedAt(); ok {
+	if value, ok := uc.mutation.CreatedAt(); ok {
 		_spec.SetField(url.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := _c.mutation.UpdatedAt(); ok {
+	if value, ok := uc.mutation.UpdatedAt(); ok {
 		_spec.SetField(url.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
@@ -230,16 +230,16 @@ type URLCreateBulk struct {
 }
 
 // Save creates the URL entities in the database.
-func (_c *URLCreateBulk) Save(ctx context.Context) ([]*URL, error) {
-	if _c.err != nil {
-		return nil, _c.err
+func (ucb *URLCreateBulk) Save(ctx context.Context) ([]*URL, error) {
+	if ucb.err != nil {
+		return nil, ucb.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
-	nodes := make([]*URL, len(_c.builders))
-	mutators := make([]Mutator, len(_c.builders))
-	for i := range _c.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(ucb.builders))
+	nodes := make([]*URL, len(ucb.builders))
+	mutators := make([]Mutator, len(ucb.builders))
+	for i := range ucb.builders {
 		func(i int, root context.Context) {
-			builder := _c.builders[i]
+			builder := ucb.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*URLMutation)
@@ -253,11 +253,11 @@ func (_c *URLCreateBulk) Save(ctx context.Context) ([]*URL, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, ucb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, ucb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -281,7 +281,7 @@ func (_c *URLCreateBulk) Save(ctx context.Context) ([]*URL, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, ucb.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -289,8 +289,8 @@ func (_c *URLCreateBulk) Save(ctx context.Context) ([]*URL, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_c *URLCreateBulk) SaveX(ctx context.Context) []*URL {
-	v, err := _c.Save(ctx)
+func (ucb *URLCreateBulk) SaveX(ctx context.Context) []*URL {
+	v, err := ucb.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -298,14 +298,14 @@ func (_c *URLCreateBulk) SaveX(ctx context.Context) []*URL {
 }
 
 // Exec executes the query.
-func (_c *URLCreateBulk) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (ucb *URLCreateBulk) Exec(ctx context.Context) error {
+	_, err := ucb.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *URLCreateBulk) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (ucb *URLCreateBulk) ExecX(ctx context.Context) {
+	if err := ucb.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

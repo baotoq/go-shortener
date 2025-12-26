@@ -52,7 +52,7 @@ func (*URL) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the URL fields.
-func (_m *URL) assignValues(columns []string, values []any) error {
+func (u *URL) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -63,46 +63,46 @@ func (_m *URL) assignValues(columns []string, values []any) error {
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			_m.ID = int(value.Int64)
+			u.ID = int(value.Int64)
 		case url.FieldShortCode:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field short_code", values[i])
 			} else if value.Valid {
-				_m.ShortCode = value.String
+				u.ShortCode = value.String
 			}
 		case url.FieldOriginalURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field original_url", values[i])
 			} else if value.Valid {
-				_m.OriginalURL = value.String
+				u.OriginalURL = value.String
 			}
 		case url.FieldClickCount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field click_count", values[i])
 			} else if value.Valid {
-				_m.ClickCount = value.Int64
+				u.ClickCount = value.Int64
 			}
 		case url.FieldExpiresAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field expires_at", values[i])
 			} else if value.Valid {
-				_m.ExpiresAt = new(time.Time)
-				*_m.ExpiresAt = value.Time
+				u.ExpiresAt = new(time.Time)
+				*u.ExpiresAt = value.Time
 			}
 		case url.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				_m.CreatedAt = value.Time
+				u.CreatedAt = value.Time
 			}
 		case url.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
-				_m.UpdatedAt = value.Time
+				u.UpdatedAt = value.Time
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			u.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -110,52 +110,52 @@ func (_m *URL) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the URL.
 // This includes values selected through modifiers, order, etc.
-func (_m *URL) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (u *URL) Value(name string) (ent.Value, error) {
+	return u.selectValues.Get(name)
 }
 
 // Update returns a builder for updating this URL.
 // Note that you need to call URL.Unwrap() before calling this method if this URL
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *URL) Update() *URLUpdateOne {
-	return NewURLClient(_m.config).UpdateOne(_m)
+func (u *URL) Update() *URLUpdateOne {
+	return NewURLClient(u.config).UpdateOne(u)
 }
 
 // Unwrap unwraps the URL entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *URL) Unwrap() *URL {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (u *URL) Unwrap() *URL {
+	_tx, ok := u.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: URL is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	u.config.driver = _tx.drv
+	return u
 }
 
 // String implements the fmt.Stringer.
-func (_m *URL) String() string {
+func (u *URL) String() string {
 	var builder strings.Builder
 	builder.WriteString("URL(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", u.ID))
 	builder.WriteString("short_code=")
-	builder.WriteString(_m.ShortCode)
+	builder.WriteString(u.ShortCode)
 	builder.WriteString(", ")
 	builder.WriteString("original_url=")
-	builder.WriteString(_m.OriginalURL)
+	builder.WriteString(u.OriginalURL)
 	builder.WriteString(", ")
 	builder.WriteString("click_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ClickCount))
+	builder.WriteString(fmt.Sprintf("%v", u.ClickCount))
 	builder.WriteString(", ")
-	if v := _m.ExpiresAt; v != nil {
+	if v := u.ExpiresAt; v != nil {
 		builder.WriteString("expires_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
-	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(u.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
-	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(u.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

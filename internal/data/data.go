@@ -14,12 +14,22 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewURLRepo, NewUnitOfWork)
+var ProviderSet = wire.NewSet(NewData, NewURLRepo, NewURLCache, NewCachedURLRepository, NewUnitOfWork)
 
 // Data holds database and cache clients
 type Data struct {
 	db  *ent.Client
 	rdb *redis.Client
+}
+
+// RedisClient returns the Redis client, which may be nil if Redis is unavailable.
+func (d *Data) RedisClient() *redis.Client {
+	return d.rdb
+}
+
+// NewURLCache creates a new URL cache from Data.
+func NewURLCache(data *Data, logger log.Logger) URLCache {
+	return NewRedisURLCache(data.RedisClient(), logger)
 }
 
 // NewData creates a new Data instance with database and redis connections

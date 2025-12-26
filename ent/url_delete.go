@@ -20,56 +20,56 @@ type URLDelete struct {
 }
 
 // Where appends a list predicates to the URLDelete builder.
-func (_d *URLDelete) Where(ps ...predicate.URL) *URLDelete {
-	_d.mutation.Where(ps...)
-	return _d
+func (ud *URLDelete) Where(ps ...predicate.URL) *URLDelete {
+	ud.mutation.Where(ps...)
+	return ud
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (_d *URLDelete) Exec(ctx context.Context) (int, error) {
-	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
+func (ud *URLDelete) Exec(ctx context.Context) (int, error) {
+	return withHooks(ctx, ud.sqlExec, ud.mutation, ud.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *URLDelete) ExecX(ctx context.Context) int {
-	n, err := _d.Exec(ctx)
+func (ud *URLDelete) ExecX(ctx context.Context) int {
+	n, err := ud.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (_d *URLDelete) sqlExec(ctx context.Context) (int, error) {
+func (ud *URLDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := sqlgraph.NewDeleteSpec(url.Table, sqlgraph.NewFieldSpec(url.FieldID, field.TypeInt))
-	if ps := _d.mutation.predicates; len(ps) > 0 {
+	if ps := ud.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, _d.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, ud.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
-	_d.mutation.done = true
+	ud.mutation.done = true
 	return affected, err
 }
 
 // URLDeleteOne is the builder for deleting a single URL entity.
 type URLDeleteOne struct {
-	_d *URLDelete
+	ud *URLDelete
 }
 
 // Where appends a list predicates to the URLDelete builder.
-func (_d *URLDeleteOne) Where(ps ...predicate.URL) *URLDeleteOne {
-	_d._d.mutation.Where(ps...)
-	return _d
+func (udo *URLDeleteOne) Where(ps ...predicate.URL) *URLDeleteOne {
+	udo.ud.mutation.Where(ps...)
+	return udo
 }
 
 // Exec executes the deletion query.
-func (_d *URLDeleteOne) Exec(ctx context.Context) error {
-	n, err := _d._d.Exec(ctx)
+func (udo *URLDeleteOne) Exec(ctx context.Context) error {
+	n, err := udo.ud.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
@@ -81,8 +81,8 @@ func (_d *URLDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *URLDeleteOne) ExecX(ctx context.Context) {
-	if err := _d.Exec(ctx); err != nil {
+func (udo *URLDeleteOne) ExecX(ctx context.Context) {
+	if err := udo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

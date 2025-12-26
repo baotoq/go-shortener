@@ -24,13 +24,14 @@ import (
 // IntegrationTestSuite is the test suite for integration tests using testcontainers.
 type IntegrationTestSuite struct {
 	suite.Suite
-	ctx             context.Context
-	pgContainer     *postgres.PostgresContainer
-	redisContainer  *tcredis.RedisContainer
-	entClient       *ent.Client
-	redisClient     *redis.Client
-	repo            domain.URLRepository
-	data            *Data
+	ctx            context.Context
+	pgContainer    *postgres.PostgresContainer
+	redisContainer *tcredis.RedisContainer
+	entClient      *ent.Client
+	redisClient    *redis.Client
+	repo           domain.URLRepository
+	cache          URLCache
+	data           *Data
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
@@ -82,12 +83,14 @@ func (s *IntegrationTestSuite) SetupSuite() {
 		Addr: redisEndpoint,
 	})
 
-	// Create Data and repository
+	// Create Data and repository with cache
 	s.data = &Data{
 		db:  s.entClient,
 		rdb: s.redisClient,
 	}
-	s.repo = NewURLRepo(s.data, log.DefaultLogger)
+	baseRepo := NewURLRepo(s.data, log.DefaultLogger)
+	s.cache = NewRedisURLCache(s.redisClient, log.DefaultLogger)
+	s.repo = NewCachedURLRepository(baseRepo, s.cache)
 }
 
 func (s *IntegrationTestSuite) TearDownSuite() {

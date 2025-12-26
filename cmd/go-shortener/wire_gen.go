@@ -28,7 +28,9 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	if err != nil {
 		return nil, nil, err
 	}
-	urlRepository := data.NewURLRepo(dataData, logger)
+	urlRepo := data.NewURLRepo(dataData, logger)
+	urlCache := data.NewURLCache(dataData, logger)
+	urlRepository := data.NewCachedURLRepository(urlRepo, urlCache)
 	dispatcher := biz.NewEventDispatcher(urlRepository, logger)
 	unitOfWork := data.NewUnitOfWork(dataData, dispatcher, logger)
 	urlUsecase := biz.NewURLUsecase(urlRepository, unitOfWork, logger)

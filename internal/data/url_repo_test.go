@@ -285,11 +285,3 @@ func (s *URLRepoTestSuite) TestExists_NotFound() {
 	require.NoError(s.T(), err)
 	assert.False(s.T(), exists)
 }
-
-func (s *URLRepoTestSuite) TestCacheKey() {
-	// Arrange & Act
-	key := s.repo.cacheKey("test123")
-
-	// Assert
-	assert.Equal(s.T(), "url:test123", key)
-}
