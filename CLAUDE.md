@@ -6,11 +6,12 @@ A URL shortening service built with Go and the Kratos microservice framework.
 
 This project implements a full-featured URL shortener with:
 - Custom short codes or auto-generated codes
-- Click analytics tracking
+- Click analytics tracking (event-driven)
 - URL expiration support
 - Redis caching (optional, degrades gracefully)
 - SQLite database storage
 - Both HTTP and gRPC APIs
+- Domain-Driven Design (DDD) architecture
 
 ## Tech Stack
 
@@ -20,7 +21,8 @@ This project implements a full-featured URL shortener with:
 - **Cache**: Redis (optional)
 - **DI**: Google Wire
 - **API**: Protocol Buffers (gRPC + HTTP)
-- **Testing**: Testify, Mockery, Testcontainers
+- **Validation**: [ozzo-validation](https://github.com/go-ozzo/ozzo-validation)
+- **Testing**: Testify (suite pattern), Mockery, Testcontainers
 
 ## Project Structure
 
@@ -39,22 +41,34 @@ go-shortener/
 ├── ent/                   # Ent ORM
 │   └── schema/url.go      # URL entity schema
 ├── internal/
-│   ├── biz/               # Business logic layer
+│   ├── biz/               # Business logic layer (use cases)
 │   │   ├── url.go         # URL usecase
-│   │   └── url_test.go    # Unit tests (mockery)
+│   │   ├── url_test.go    # Unit tests (testify suite + mockery)
+│   │   └── event_handlers.go # Domain event handlers
 │   ├── data/              # Data access layer
 │   │   ├── data.go        # DB/Redis initialization
-│   │   ├── url_repo.go    # URL repository
-│   │   ├── url_repo_test.go    # Repository tests (testcontainers)
-│   │   └── integration_test.go # Integration tests (testcontainers)
+│   │   ├── url_repo.go    # URL repository implementation
+│   │   └── url_repo_test.go # Integration tests (testcontainers)
 │   ├── domain/            # Domain layer (DDD)
-│   │   ├── url.go         # URL aggregate
+│   │   ├── url.go         # URL aggregate root
+│   │   ├── aggregate.go   # AggregateRoot interface
 │   │   ├── repository.go  # Repository interface
-│   │   └── uow.go         # Unit of Work interface
+│   │   ├── uow.go         # Unit of Work interface
+│   │   ├── valueobject.go # Re-exports value objects
+│   │   ├── valueobject/   # Value objects
+│   │   │   ├── shortcode.go     # ShortCode value object
+│   │   │   ├── originalurl.go   # OriginalURL value object
+│   │   │   └── errors.go        # Domain errors
+│   │   └── event/         # Domain events
+│   │       ├── event.go        # Event interface & dispatcher
+│   │       ├── url_created.go  # URLCreated event
+│   │       ├── url_clicked.go  # URLClicked event
+│   │       ├── url_deleted.go  # URLDeleted event
+│   │       └── url_expired.go  # URLExpired event
 │   ├── mocks/             # Generated mocks (mockery)
 │   ├── service/           # Service layer (handlers)
 │   │   ├── shortener.go   # gRPC/HTTP handlers
-│   │   └── shortener_test.go   # Service tests (mockery)
+│   │   └── shortener_test.go   # Service tests (testify suite)
 │   ├── server/            # Server configuration
 │   │   ├── http.go        # HTTP server
 │   │   └── grpc.go        # gRPC server
@@ -113,6 +127,7 @@ go test ./... -v
 go test ./internal/biz/... -v
 go test ./internal/data/... -v
 go test ./internal/service/... -v
+go test ./internal/domain/... -v
 
 # Run with coverage
 go test ./... -cover
@@ -121,11 +136,13 @@ go test ./... -cover
 go generate ./internal/domain/...
 ```
 
-### Test Structure
+### Test Patterns
 
+- **Testify Suite**: All tests use `suite.Suite` with `SetupTest()` for automatic setup
+- **SUT naming**: System Under Test is named `sut` in test suites
+- **AAA pattern**: All tests follow Arrange-Act-Assert pattern
 - **Unit tests**: Use mockery-generated mocks
 - **Integration tests**: Use testcontainers (PostgreSQL, Redis)
-- **AAA pattern**: All tests follow Arrange-Act-Assert pattern
 
 ## API Endpoints
 
@@ -203,13 +220,40 @@ data:
 
 ## Architecture
 
-The project follows Kratos clean architecture:
+The project follows DDD with Kratos clean architecture:
 
-1. **Service Layer** (`internal/service/`) - Handles HTTP/gRPC requests, converts proto messages
-2. **Business Layer** (`internal/biz/`) - Contains business logic, validation, domain models
-3. **Data Layer** (`internal/data/`) - Repository implementation, database operations, caching
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Service Layer                             │
+│  (HTTP/gRPC handlers, proto conversion)                     │
+├─────────────────────────────────────────────────────────────┤
+│                    Business Layer (Use Cases)                │
+│  (Application logic, orchestration, event dispatch)         │
+├─────────────────────────────────────────────────────────────┤
+│                    Domain Layer                              │
+│  (Aggregates, Entities, Value Objects, Domain Events)       │
+├─────────────────────────────────────────────────────────────┤
+│                    Data Layer                                │
+│  (Repository implementations, database, caching)            │
+└─────────────────────────────────────────────────────────────┘
+```
 
-Dependencies flow inward: Service -> Biz -> Data
+Dependencies flow inward: Service -> Biz -> Domain <- Data
+
+### Key DDD Concepts
+
+- **Aggregate Root**: `URL` is the aggregate root with domain logic
+- **Value Objects**: `ShortCode`, `OriginalURL` - immutable, validated on creation
+- **Domain Events**: `URLCreated`, `URLClicked`, `URLDeleted`, `URLExpired`
+- **Unit of Work**: Transaction management with event dispatch after commit
+- **Repository Pattern**: Domain defines interface, data layer implements
+
+### Event-Driven Click Tracking
+
+Click counts are incremented via domain events:
+1. `URL.RecordClick()` raises `URLClicked` event
+2. `UnitOfWork.Do()` dispatches events after successful transaction
+3. `ClickEventHandler` handles event and increments count in repository
 
 ## Error Handling
 
@@ -230,3 +274,5 @@ Custom error codes defined in `api/shortener/v1/error_reason.proto`:
 - Short codes are 6 characters by default (base64 URL-safe)
 - Custom codes must be 3-20 characters (alphanumeric, underscore, hyphen)
 - Integration tests require Docker to be running (testcontainers)
+- Value objects use ozzo-validation for declarative validation
+- All type conversions in Go must be explicit (e.g., `.String()` required)

@@ -131,7 +131,7 @@ func TestShortCode_String(t *testing.T) {
 
 func TestGenerateShortCode_Uniqueness(t *testing.T) {
 	codes := make(map[string]bool)
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		sc, err := GenerateShortCode(DefaultShortCodeLength)
 		require.NoError(t, err)
 		assert.False(t, codes[sc.String()], "duplicate code generated")

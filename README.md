@@ -1,32 +1,36 @@
 # Go URL Shortener
 
-A URL shortening service built with Go and the [Kratos](https://go-kratos.dev/) microservice framework.
+A URL shortening service built with Go and the [Kratos](https://go-kratos.dev/) microservice framework, following Domain-Driven Design (DDD) principles.
 
 ## Features
 
 - Create short URLs with auto-generated or custom codes
-- Click analytics tracking
+- Click analytics tracking (event-driven)
 - URL expiration support
 - Redis caching (optional, degrades gracefully)
 - SQLite database storage
 - Both HTTP and gRPC APIs
+- Domain-Driven Design architecture
 
 ## Tech Stack
 
 - **Framework**: [Kratos](https://go-kratos.dev/) v2.9.2
 - **ORM**: [Ent](https://entgo.io/)
-- **Database**: SQLite3
+- **Database**: SQLite3 (dev), PostgreSQL (tests)
 - **Cache**: Redis (optional)
 - **DI**: Google Wire
 - **API**: Protocol Buffers (gRPC + HTTP)
+- **Validation**: ozzo-validation
+- **Testing**: Testify, Mockery, Testcontainers
 
 ## Quick Start
 
 ### Prerequisites
 
-- Go 1.22+
+- Go 1.23+
 - Make
 - Protocol Buffers compiler (`protoc`)
+- Docker (for integration tests)
 
 ### Installation
 
@@ -87,6 +91,34 @@ curl -X DELETE http://localhost:8000/v1/urls/gh
 
 Service: `shortener.v1.Shortener`
 
+## Architecture
+
+The project follows DDD with clean architecture:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Service Layer                             │
+│  (HTTP/gRPC handlers, proto conversion)                     │
+├─────────────────────────────────────────────────────────────┤
+│                    Business Layer (Use Cases)                │
+│  (Application logic, orchestration, event dispatch)         │
+├─────────────────────────────────────────────────────────────┤
+│                    Domain Layer                              │
+│  (Aggregates, Entities, Value Objects, Domain Events)       │
+├─────────────────────────────────────────────────────────────┤
+│                    Data Layer                                │
+│  (Repository implementations, database, caching)            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key DDD Concepts
+
+- **Aggregate Root**: `URL` is the aggregate root with domain logic
+- **Value Objects**: `ShortCode`, `OriginalURL` - immutable, validated on creation
+- **Domain Events**: `URLCreated`, `URLClicked`, `URLDeleted`, `URLExpired`
+- **Unit of Work**: Transaction management with event dispatch after commit
+- **Repository Pattern**: Domain defines interface, data layer implements
+
 ## Project Structure
 
 ```
@@ -96,8 +128,10 @@ go-shortener/
 ├── configs/                # Configuration files
 ├── ent/                    # Ent ORM schema
 ├── internal/
-│   ├── biz/                # Business logic layer
-│   ├── data/               # Data access layer
+│   ├── biz/                # Business logic layer (use cases)
+│   ├── data/               # Data access layer (repositories)
+│   ├── domain/             # Domain layer (aggregates, value objects, events)
+│   ├── mocks/              # Generated mocks (mockery)
 │   ├── service/            # Service handlers
 │   ├── server/             # HTTP/gRPC servers
 │   └── conf/               # Configuration
@@ -124,6 +158,9 @@ go test ./... -v
 
 # Run tests with coverage
 go test ./... -cover
+
+# Generate mocks
+go generate ./internal/domain/...
 ```
 
 ## Configuration
