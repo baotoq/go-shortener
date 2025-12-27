@@ -8,8 +8,8 @@ var _ Event = URLExpired{}
 // URLExpired is raised when a URL has expired.
 type URLExpired struct {
 	Base
-	ShortCode string
-	ExpiredAt time.Time
+	ShortCode string    `json:"short_code"`
+	ExpiredAt time.Time `json:"expired_at"`
 }
 
 // NewURLExpired creates a new URLExpired event.

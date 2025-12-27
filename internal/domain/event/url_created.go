@@ -8,9 +8,9 @@ var _ Event = URLCreated{}
 // URLCreated is raised when a new short URL is created.
 type URLCreated struct {
 	Base
-	ShortCode   string
-	OriginalURL string
-	ExpiresAt   *time.Time
+	ShortCode   string     `json:"short_code"`
+	OriginalURL string     `json:"original_url"`
+	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
 }
 
 // NewURLCreated creates a new URLCreated event.

@@ -2,46 +2,78 @@ package biz
 
 import (
 	"context"
+	"encoding/json"
 
 	"go-shortener/internal/domain"
 	"go-shortener/internal/domain/event"
+	"go-shortener/internal/infra/eventbus"
 
 	"github.com/go-kratos/kratos/v2/log"
 )
 
 // Compile-time interface checks
 var (
-	_ event.Handler = (*LoggingEventHandler)(nil)
-	_ event.Handler = (*ClickEventHandler)(nil)
+	_ eventbus.EventHandler = (*LoggingEventHandler)(nil)
+	_ eventbus.EventHandler = (*ClickEventHandler)(nil)
 )
 
 // LoggingEventHandler logs all domain events.
 type LoggingEventHandler struct {
-	log *log.Helper
+	log       *log.Helper
+	eventName string
 }
 
 // NewLoggingEventHandler creates a new logging event handler.
-func NewLoggingEventHandler(logger log.Logger) *LoggingEventHandler {
+func NewLoggingEventHandler(logger log.Logger, eventName string) *LoggingEventHandler {
 	return &LoggingEventHandler{
-		log: log.NewHelper(logger),
+		log:       log.NewHelper(logger),
+		eventName: eventName,
 	}
 }
 
+func (h *LoggingEventHandler) HandlerName() string {
+	return "logging_handler_" + h.eventName
+}
+
+func (h *LoggingEventHandler) EventName() string {
+	return h.eventName
+}
+
 // Handle logs the event details.
-func (h *LoggingEventHandler) Handle(e event.Event) error {
-	switch evt := e.(type) {
-	case event.URLCreated:
+func (h *LoggingEventHandler) Handle(ctx context.Context, envelope *eventbus.EventEnvelope) error {
+	switch envelope.EventName {
+	case "url.created":
+		var evt event.URLCreated
+		if err := json.Unmarshal(envelope.Payload, &evt); err != nil {
+			return err
+		}
 		h.log.Infof("[Event] URL created: %s -> %s", evt.ShortCode, evt.OriginalURL)
-	case event.URLClicked:
+	case "url.clicked":
+		var evt event.URLClicked
+		if err := json.Unmarshal(envelope.Payload, &evt); err != nil {
+			return err
+		}
 		h.log.Infof("[Event] URL clicked: %s (count: %d, ip: %s)", evt.ShortCode, evt.ClickCount, evt.IPAddress)
-	case event.URLDeleted:
+	case "url.deleted":
+		var evt event.URLDeleted
+		if err := json.Unmarshal(envelope.Payload, &evt); err != nil {
+			return err
+		}
 		h.log.Infof("[Event] URL deleted: %s", evt.ShortCode)
-	case event.URLExpired:
+	case "url.expired":
+		var evt event.URLExpired
+		if err := json.Unmarshal(envelope.Payload, &evt); err != nil {
+			return err
+		}
 		h.log.Infof("[Event] URL expired: %s at %s", evt.ShortCode, evt.ExpiredAt)
-	case event.ClickMilestoneReached:
+	case "url.milestone_reached":
+		var evt event.ClickMilestoneReached
+		if err := json.Unmarshal(envelope.Payload, &evt); err != nil {
+			return err
+		}
 		h.log.Infof("[Event] Milestone reached: %s hit %d clicks!", evt.ShortCode, evt.Milestone)
 	default:
-		h.log.Infof("[Event] %s: %s", e.EventName(), e.AggregateID())
+		h.log.Infof("[Event] %s: %s", envelope.EventName, envelope.AggregateID)
 	}
 	return nil
 }
@@ -60,10 +92,19 @@ func NewClickEventHandler(repo domain.URLRepository, logger log.Logger) *ClickEv
 	}
 }
 
+func (h *ClickEventHandler) HandlerName() string {
+	return "click_handler"
+}
+
+func (h *ClickEventHandler) EventName() string {
+	return "url.clicked"
+}
+
 // Handle increments the click count when a URLClicked event is received.
-func (h *ClickEventHandler) Handle(e event.Event) error {
-	evt, ok := e.(event.URLClicked)
-	if !ok {
+func (h *ClickEventHandler) Handle(ctx context.Context, envelope *eventbus.EventEnvelope) error {
+	var evt event.URLClicked
+	if err := json.Unmarshal(envelope.Payload, &evt); err != nil {
+		h.log.Warnf("failed to unmarshal URLClicked event: %v", err)
 		return nil
 	}
 
@@ -73,7 +114,7 @@ func (h *ClickEventHandler) Handle(e event.Event) error {
 		return nil
 	}
 
-	if err := h.repo.IncrementClickCount(context.Background(), sc); err != nil {
+	if err := h.repo.IncrementClickCount(ctx, sc); err != nil {
 		h.log.Warnf("Failed to increment click count for %s: %v", evt.ShortCode, err)
 		return err
 	}
@@ -81,21 +122,21 @@ func (h *ClickEventHandler) Handle(e event.Event) error {
 	return nil
 }
 
-// NewEventDispatcher creates and configures an event dispatcher with handlers.
-func NewEventDispatcher(repo domain.URLRepository, logger log.Logger) *event.Dispatcher {
-	dispatcher := event.NewDispatcher()
-	loggingHandler := NewLoggingEventHandler(logger)
-	clickHandler := NewClickEventHandler(repo, logger)
+// RegisterEventHandlers registers all event handlers with the router.
+func RegisterEventHandlers(router *eventbus.Router, repo domain.URLRepository, logger log.Logger) {
+	eventNames := []string{
+		"url.created",
+		"url.clicked",
+		"url.deleted",
+		"url.expired",
+		"url.milestone_reached",
+	}
 
-	// Register logging handler for all event types
-	dispatcher.Register("url.created", loggingHandler)
-	dispatcher.Register("url.clicked", loggingHandler)
-	dispatcher.Register("url.deleted", loggingHandler)
-	dispatcher.Register("url.expired", loggingHandler)
-	dispatcher.Register("url.milestone_reached", loggingHandler)
+	// Register logging handlers for all event types
+	for _, eventName := range eventNames {
+		router.AddHandler(NewLoggingEventHandler(logger, eventName))
+	}
 
-	// Register click handler for click events
-	dispatcher.Register("url.clicked", clickHandler)
-
-	return dispatcher
+	// Register click handler
+	router.AddHandler(NewClickEventHandler(repo, logger))
 }

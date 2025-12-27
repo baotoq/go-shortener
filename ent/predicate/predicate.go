@@ -6,5 +6,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// OutboxMessage is the predicate function for outboxmessage builders.
+type OutboxMessage func(*sql.Selector)
+
 // URL is the predicate function for url builders.
 type URL func(*sql.Selector)

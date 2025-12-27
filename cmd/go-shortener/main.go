@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
+	"go-shortener/internal/biz"
 	"go-shortener/internal/conf"
+	"go-shortener/internal/domain"
+	"go-shortener/internal/infra/eventbus"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
@@ -33,7 +37,18 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
+func newApp(
+	logger log.Logger,
+	gs *grpc.Server,
+	hs *http.Server,
+	eventBus *eventbus.EventBus,
+	router *eventbus.Router,
+	forwarder *eventbus.Forwarder,
+	repo domain.URLRepository,
+) *kratos.App {
+	// Register event handlers
+	biz.RegisterEventHandlers(router, repo, logger)
+
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
@@ -44,6 +59,28 @@ func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
 			gs,
 			hs,
 		),
+		kratos.BeforeStart(func(ctx context.Context) error {
+			// Start the outbox forwarder
+			forwarder.Start(ctx)
+			// Start the event router in a goroutine
+			go func() {
+				if err := router.Run(ctx); err != nil {
+					log.NewHelper(logger).Errorf("event router error: %v", err)
+				}
+			}()
+			return nil
+		}),
+		kratos.BeforeStop(func(ctx context.Context) error {
+			// Stop the forwarder and router
+			forwarder.Stop()
+			if err := router.Close(); err != nil {
+				log.NewHelper(logger).Errorf("failed to close router: %v", err)
+			}
+			if err := eventBus.Close(); err != nil {
+				log.NewHelper(logger).Errorf("failed to close event bus: %v", err)
+			}
+			return nil
+		}),
 	)
 }
 

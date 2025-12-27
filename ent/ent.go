@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-shortener/ent/outboxmessage"
 	"go-shortener/ent/url"
 	"reflect"
 	"sync"
@@ -73,7 +74,8 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			url.Table: url.ValidColumn,
+			outboxmessage.Table: outboxmessage.ValidColumn,
+			url.Table:           url.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

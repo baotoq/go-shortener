@@ -6,9 +6,9 @@ var _ Event = ClickMilestoneReached{}
 // ClickMilestoneReached is raised when a URL reaches a click milestone.
 type ClickMilestoneReached struct {
 	Base
-	ShortCode  string
-	Milestone  int64
-	ClickCount int64
+	ShortCode  string `json:"short_code"`
+	Milestone  int64  `json:"milestone"`
+	ClickCount int64  `json:"click_count"`
 }
 
 // Milestones defines the milestones that trigger the event.

@@ -9,9 +9,11 @@ package main
 import (
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
+	"go-shortener/ent"
 	"go-shortener/internal/biz"
 	"go-shortener/internal/conf"
 	"go-shortener/internal/data"
+	"go-shortener/internal/infra/eventbus"
 	"go-shortener/internal/server"
 	"go-shortener/internal/service"
 )
@@ -31,14 +33,30 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	urlRepo := data.NewURLRepo(dataData, logger)
 	urlCache := data.NewURLCache(dataData, logger)
 	urlRepository := data.NewCachedURLRepository(urlRepo, urlCache)
-	dispatcher := biz.NewEventDispatcher(urlRepository, logger)
-	unitOfWork := data.NewUnitOfWork(dataData, dispatcher, logger)
+	client := provideEntClient(dataData)
+	outboxPublisher := eventbus.ProvideOutboxPublisher(client)
+	unitOfWork := data.NewUnitOfWork(dataData, outboxPublisher, logger)
 	urlUsecase := biz.NewURLUsecase(urlRepository, unitOfWork, logger)
 	shortenerService := service.NewShortenerService(urlUsecase)
 	grpcServer := server.NewGRPCServer(confServer, shortenerService, logger)
 	httpServer := server.NewHTTPServer(confServer, shortenerService, logger)
-	app := newApp(logger, grpcServer, httpServer)
+	loggerAdapter := eventbus.NewKratosLoggerAdapter(logger)
+	eventBus := eventbus.NewEventBus(loggerAdapter)
+	router, err := eventbus.NewRouter(eventBus, loggerAdapter)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	forwarder := eventbus.ProvideForwarder(client, eventBus, logger)
+	app := newApp(logger, grpcServer, httpServer, eventBus, router, forwarder, urlRepository)
 	return app, func() {
 		cleanup()
 	}, nil
+}
+
+// wire.go:
+
+// provideEntClient extracts the ent.Client from Data for eventbus providers.
+func provideEntClient(d *data.Data) *ent.Client {
+	return d.EntClient()
 }

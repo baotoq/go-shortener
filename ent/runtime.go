@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"go-shortener/ent/outboxmessage"
 	"go-shortener/ent/schema"
 	"go-shortener/ent/url"
 	"time"
@@ -12,6 +13,20 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	outboxmessageFields := schema.OutboxMessage{}.Fields()
+	_ = outboxmessageFields
+	// outboxmessageDescUUID is the schema descriptor for uuid field.
+	outboxmessageDescUUID := outboxmessageFields[0].Descriptor()
+	// outboxmessage.UUIDValidator is a validator for the "uuid" field. It is called by the builders before save.
+	outboxmessage.UUIDValidator = outboxmessageDescUUID.Validators[0].(func(string) error)
+	// outboxmessageDescPayload is the schema descriptor for payload field.
+	outboxmessageDescPayload := outboxmessageFields[1].Descriptor()
+	// outboxmessage.PayloadValidator is a validator for the "payload" field. It is called by the builders before save.
+	outboxmessage.PayloadValidator = outboxmessageDescPayload.Validators[0].(func([]byte) error)
+	// outboxmessageDescCreatedAt is the schema descriptor for created_at field.
+	outboxmessageDescCreatedAt := outboxmessageFields[3].Descriptor()
+	// outboxmessage.DefaultCreatedAt holds the default value on creation for the created_at field.
+	outboxmessage.DefaultCreatedAt = outboxmessageDescCreatedAt.Default.(func() time.Time)
 	urlFields := schema.URL{}.Fields()
 	_ = urlFields
 	// urlDescShortCode is the schema descriptor for short_code field.

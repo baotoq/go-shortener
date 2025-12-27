@@ -6,7 +6,7 @@ var _ Event = URLDeleted{}
 // URLDeleted is raised when a URL is deleted.
 type URLDeleted struct {
 	Base
-	ShortCode string
+	ShortCode string `json:"short_code"`
 }
 
 // NewURLDeleted creates a new URLDeleted event.

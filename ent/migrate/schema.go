@@ -8,6 +8,27 @@ import (
 )
 
 var (
+	// OutboxMessagesColumns holds the columns for the "outbox_messages" table.
+	OutboxMessagesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "uuid", Type: field.TypeString, Unique: true, SchemaType: map[string]string{"postgres": "varchar(36)", "sqlite3": "varchar(36)"}},
+		{Name: "payload", Type: field.TypeBytes},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// OutboxMessagesTable holds the schema information for the "outbox_messages" table.
+	OutboxMessagesTable = &schema.Table{
+		Name:       "outbox_messages",
+		Columns:    OutboxMessagesColumns,
+		PrimaryKey: []*schema.Column{OutboxMessagesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "outboxmessage_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{OutboxMessagesColumns[4]},
+			},
+		},
+	}
 	// UrLsColumns holds the columns for the "ur_ls" table.
 	UrLsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -38,6 +59,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		OutboxMessagesTable,
 		UrLsTable,
 	}
 )

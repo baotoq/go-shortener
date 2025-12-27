@@ -6,11 +6,11 @@ var _ Event = URLClicked{}
 // URLClicked is raised when a short URL is accessed for redirection.
 type URLClicked struct {
 	Base
-	ShortCode  string
-	ClickCount int64
-	UserAgent  string
-	IPAddress  string
-	Referrer   string
+	ShortCode  string `json:"short_code"`
+	ClickCount int64  `json:"click_count"`
+	UserAgent  string `json:"user_agent"`
+	IPAddress  string `json:"ip_address"`
+	Referrer   string `json:"referrer"`
 }
 
 // NewURLClicked creates a new URLClicked event.

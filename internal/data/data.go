@@ -27,6 +27,11 @@ func (d *Data) RedisClient() *redis.Client {
 	return d.rdb
 }
 
+// EntClient returns the Ent database client.
+func (d *Data) EntClient() *ent.Client {
+	return d.db
+}
+
 // NewURLCache creates a new URL cache from Data.
 func NewURLCache(data *Data, logger log.Logger) URLCache {
 	return NewRedisURLCache(data.RedisClient(), logger)

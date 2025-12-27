@@ -6,6 +6,7 @@ import (
 	"go-shortener/ent"
 	"go-shortener/internal/domain"
 	"go-shortener/internal/domain/event"
+	"go-shortener/internal/infra/eventbus"
 
 	"github.com/go-kratos/kratos/v2/log"
 )
@@ -15,24 +16,24 @@ var _ domain.UnitOfWork = (*unitOfWork)(nil)
 
 type txKey struct{}
 
-// unitOfWork implements domain.UnitOfWork with transaction support.
+// unitOfWork implements domain.UnitOfWork with transaction support and outbox pattern.
 type unitOfWork struct {
-	db         *ent.Client
-	dispatcher *event.Dispatcher
-	log        *log.Helper
+	db     *ent.Client
+	outbox *eventbus.OutboxPublisher
+	log    *log.Helper
 }
 
 // NewUnitOfWork creates a new UnitOfWork.
-func NewUnitOfWork(data *Data, dispatcher *event.Dispatcher, logger log.Logger) domain.UnitOfWork {
+func NewUnitOfWork(data *Data, outbox *eventbus.OutboxPublisher, logger log.Logger) domain.UnitOfWork {
 	return &unitOfWork{
-		db:         data.db,
-		dispatcher: dispatcher,
-		log:        log.NewHelper(logger),
+		db:     data.db,
+		outbox: outbox,
+		log:    log.NewHelper(logger),
 	}
 }
 
 // Do executes the function within a database transaction.
-// Events are dispatched only after successful commit.
+// Events are stored in the outbox table within the same transaction.
 func (u *unitOfWork) Do(ctx context.Context, fn func(ctx context.Context) error, aggregates ...domain.AggregateRoot) error {
 	tx, err := u.db.Tx(ctx)
 	if err != nil {
@@ -56,30 +57,38 @@ func (u *unitOfWork) Do(ctx context.Context, fn func(ctx context.Context) error,
 		return err
 	}
 
+	// Store events in outbox within the same transaction
+	if err := u.storeEventsInOutbox(txCtx, tx, aggregates); err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			u.log.WithContext(ctx).Errorf("rollback failed: %v", rbErr)
+		}
+		return err
+	}
+
 	if err := tx.Commit(); err != nil {
 		return err
 	}
 
-	// Dispatch events after successful commit
-	u.dispatchEvents(aggregates)
+	// Clear events after successful commit
+	for _, aggregate := range aggregates {
+		aggregate.ClearEvents()
+	}
 
 	return nil
 }
 
-// dispatchEvents dispatches all events from aggregates.
-func (u *unitOfWork) dispatchEvents(aggregates []domain.AggregateRoot) {
+// storeEventsInOutbox stores all events from aggregates in the outbox table.
+func (u *unitOfWork) storeEventsInOutbox(ctx context.Context, tx *ent.Tx, aggregates []domain.AggregateRoot) error {
+	var events []event.Event
 	for _, aggregate := range aggregates {
-		events := aggregate.Events()
-		if len(events) == 0 {
-			continue
-		}
-
-		if err := u.dispatcher.DispatchAll(events); err != nil {
-			u.log.Errorf("failed to dispatch events: %v", err)
-		}
-
-		aggregate.ClearEvents()
+		events = append(events, aggregate.Events()...)
 	}
+
+	if len(events) == 0 {
+		return nil
+	}
+
+	return u.outbox.PublishInTx(ctx, tx, events)
 }
 
 // TxFromContext retrieves the transaction from context.

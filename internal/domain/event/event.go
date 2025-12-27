@@ -20,31 +20,31 @@ type Event interface {
 
 // Base contains common fields for all events.
 type Base struct {
-	eventID     string
-	occurredAt  time.Time
-	aggregateID string
+	ID          string    `json:"event_id"`
+	OccurredAtT time.Time `json:"occurred_at"`
+	AggregateId string    `json:"aggregate_id"`
 }
 
 // NewBase creates a new base event.
 func NewBase(aggregateID string) Base {
 	return Base{
-		eventID:     uuid.Must(uuid.NewV7()).String(),
-		occurredAt:  time.Now().UTC(),
-		aggregateID: aggregateID,
+		ID:          uuid.Must(uuid.NewV7()).String(),
+		OccurredAtT: time.Now().UTC(),
+		AggregateId: aggregateID,
 	}
 }
 
 // EventID returns the unique identifier of the event.
 func (e Base) EventID() string {
-	return e.eventID
+	return e.ID
 }
 
 // OccurredAt returns when the event occurred.
 func (e Base) OccurredAt() time.Time {
-	return e.occurredAt
+	return e.OccurredAtT
 }
 
 // AggregateID returns the aggregate ID.
 func (e Base) AggregateID() string {
-	return e.aggregateID
+	return e.AggregateId
 }

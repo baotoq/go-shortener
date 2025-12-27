@@ -11,6 +11,7 @@ import (
 
 	"go-shortener/ent/migrate"
 
+	"go-shortener/ent/outboxmessage"
 	"go-shortener/ent/url"
 
 	"entgo.io/ent"
@@ -23,6 +24,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// OutboxMessage is the client for interacting with the OutboxMessage builders.
+	OutboxMessage *OutboxMessageClient
 	// URL is the client for interacting with the URL builders.
 	URL *URLClient
 }
@@ -36,6 +39,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.OutboxMessage = NewOutboxMessageClient(c.config)
 	c.URL = NewURLClient(c.config)
 }
 
@@ -127,9 +131,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		URL:    NewURLClient(cfg),
+		ctx:           ctx,
+		config:        cfg,
+		OutboxMessage: NewOutboxMessageClient(cfg),
+		URL:           NewURLClient(cfg),
 	}, nil
 }
 
@@ -147,16 +152,17 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		URL:    NewURLClient(cfg),
+		ctx:           ctx,
+		config:        cfg,
+		OutboxMessage: NewOutboxMessageClient(cfg),
+		URL:           NewURLClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		URL.
+//		OutboxMessage.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -178,22 +184,159 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.OutboxMessage.Use(hooks...)
 	c.URL.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
+	c.OutboxMessage.Intercept(interceptors...)
 	c.URL.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *OutboxMessageMutation:
+		return c.OutboxMessage.mutate(ctx, m)
 	case *URLMutation:
 		return c.URL.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// OutboxMessageClient is a client for the OutboxMessage schema.
+type OutboxMessageClient struct {
+	config
+}
+
+// NewOutboxMessageClient returns a client for the OutboxMessage from the given config.
+func NewOutboxMessageClient(c config) *OutboxMessageClient {
+	return &OutboxMessageClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `outboxmessage.Hooks(f(g(h())))`.
+func (c *OutboxMessageClient) Use(hooks ...Hook) {
+	c.hooks.OutboxMessage = append(c.hooks.OutboxMessage, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `outboxmessage.Intercept(f(g(h())))`.
+func (c *OutboxMessageClient) Intercept(interceptors ...Interceptor) {
+	c.inters.OutboxMessage = append(c.inters.OutboxMessage, interceptors...)
+}
+
+// Create returns a builder for creating a OutboxMessage entity.
+func (c *OutboxMessageClient) Create() *OutboxMessageCreate {
+	mutation := newOutboxMessageMutation(c.config, OpCreate)
+	return &OutboxMessageCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of OutboxMessage entities.
+func (c *OutboxMessageClient) CreateBulk(builders ...*OutboxMessageCreate) *OutboxMessageCreateBulk {
+	return &OutboxMessageCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OutboxMessageClient) MapCreateBulk(slice any, setFunc func(*OutboxMessageCreate, int)) *OutboxMessageCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OutboxMessageCreateBulk{err: fmt.Errorf("calling to OutboxMessageClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OutboxMessageCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OutboxMessageCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for OutboxMessage.
+func (c *OutboxMessageClient) Update() *OutboxMessageUpdate {
+	mutation := newOutboxMessageMutation(c.config, OpUpdate)
+	return &OutboxMessageUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OutboxMessageClient) UpdateOne(om *OutboxMessage) *OutboxMessageUpdateOne {
+	mutation := newOutboxMessageMutation(c.config, OpUpdateOne, withOutboxMessage(om))
+	return &OutboxMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OutboxMessageClient) UpdateOneID(id int) *OutboxMessageUpdateOne {
+	mutation := newOutboxMessageMutation(c.config, OpUpdateOne, withOutboxMessageID(id))
+	return &OutboxMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for OutboxMessage.
+func (c *OutboxMessageClient) Delete() *OutboxMessageDelete {
+	mutation := newOutboxMessageMutation(c.config, OpDelete)
+	return &OutboxMessageDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OutboxMessageClient) DeleteOne(om *OutboxMessage) *OutboxMessageDeleteOne {
+	return c.DeleteOneID(om.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OutboxMessageClient) DeleteOneID(id int) *OutboxMessageDeleteOne {
+	builder := c.Delete().Where(outboxmessage.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OutboxMessageDeleteOne{builder}
+}
+
+// Query returns a query builder for OutboxMessage.
+func (c *OutboxMessageClient) Query() *OutboxMessageQuery {
+	return &OutboxMessageQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOutboxMessage},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a OutboxMessage entity by its id.
+func (c *OutboxMessageClient) Get(ctx context.Context, id int) (*OutboxMessage, error) {
+	return c.Query().Where(outboxmessage.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OutboxMessageClient) GetX(ctx context.Context, id int) *OutboxMessage {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *OutboxMessageClient) Hooks() []Hook {
+	return c.hooks.OutboxMessage
+}
+
+// Interceptors returns the client interceptors.
+func (c *OutboxMessageClient) Interceptors() []Interceptor {
+	return c.inters.OutboxMessage
+}
+
+func (c *OutboxMessageClient) mutate(ctx context.Context, m *OutboxMessageMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OutboxMessageCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OutboxMessageUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OutboxMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OutboxMessageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown OutboxMessage mutation op: %q", m.Op())
 	}
 }
 
@@ -333,9 +476,9 @@ func (c *URLClient) mutate(ctx context.Context, m *URLMutation) (Value, error) {
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		URL []ent.Hook
+		OutboxMessage, URL []ent.Hook
 	}
 	inters struct {
-		URL []ent.Interceptor
+		OutboxMessage, URL []ent.Interceptor
 	}
 )
