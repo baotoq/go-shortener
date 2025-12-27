@@ -64,6 +64,12 @@ jobs:
           go-version: "1.23"
           cache: true
 
+      - name: Install mockery
+        run: go install github.com/vektra/mockery/v2@latest
+
+      - name: Generate mocks
+        run: go generate ./internal/domain/...
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
