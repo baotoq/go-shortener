@@ -46,10 +46,12 @@ Plans:
   2. Analytics Service receives and processes click events independently
   3. User can query total click count for any short link via Analytics API
   4. Click tracking failures do not prevent redirects from completing
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 02-01-PLAN.md -- Restructure repo for multi-service, Dapr infrastructure, shared event types
+- [ ] 02-02-PLAN.md -- URL Service Dapr pub/sub click event publishing
+- [ ] 02-03-PLAN.md -- Analytics Service (schema, repository, usecase, handler, Dapr subscription)
 
 ### Phase 3: Enhanced Analytics
 **Goal**: Analytics include rich context (geo-location, device, traffic source)
@@ -101,7 +103,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & URL Service Core | 3/3 | ✓ Complete | 2026-02-15 |
-| 2. Event-Driven Analytics | 0/TBD | Not started | - |
+| 2. Event-Driven Analytics | 0/3 | Not started | - |
 | 3. Enhanced Analytics | 0/TBD | Not started | - |
 | 4. Link Management | 0/TBD | Not started | - |
 | 5. Production Readiness | 0/TBD | Not started | - |
