@@ -87,32 +87,32 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| URL-01 | — | Pending |
-| URL-02 | — | Pending |
-| URL-03 | — | Pending |
-| URL-04 | — | Pending |
-| ANLT-01 | — | Pending |
-| ANLT-02 | — | Pending |
-| ANLT-03 | — | Pending |
-| ANLT-04 | — | Pending |
-| ANLT-05 | — | Pending |
-| ANLT-06 | — | Pending |
-| MGMT-01 | — | Pending |
-| INFR-01 | — | Pending |
-| INFR-02 | — | Pending |
-| INFR-03 | — | Pending |
-| INFR-04 | — | Pending |
-| INFR-05 | — | Pending |
-| PROD-01 | — | Pending |
-| PROD-02 | — | Pending |
-| PROD-03 | — | Pending |
-| PROD-04 | — | Pending |
+| URL-01 | Phase 1 | Pending |
+| URL-02 | Phase 1 | Pending |
+| URL-03 | Phase 1 | Pending |
+| URL-04 | Phase 1 | Pending |
+| ANLT-01 | Phase 2 | Pending |
+| ANLT-02 | Phase 2 | Pending |
+| ANLT-03 | Phase 2 | Pending |
+| ANLT-04 | Phase 3 | Pending |
+| ANLT-05 | Phase 3 | Pending |
+| ANLT-06 | Phase 3 | Pending |
+| MGMT-01 | Phase 4 | Pending |
+| INFR-01 | Phase 2 | Pending |
+| INFR-02 | Phase 5 | Pending |
+| INFR-03 | Phase 1 | Pending |
+| INFR-04 | Phase 1 | Pending |
+| INFR-05 | Phase 1 | Pending |
+| PROD-01 | Phase 5 | Pending |
+| PROD-02 | Phase 5 | Pending |
+| PROD-03 | Phase 5 | Pending |
+| PROD-04 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 20 total
-- Mapped to phases: 0
-- Unmapped: 20
+- Mapped to phases: 20
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-14*
-*Last updated: 2026-02-14 after initial definition*
+*Last updated: 2026-02-14 after roadmap creation*
