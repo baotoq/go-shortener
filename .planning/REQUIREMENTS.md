@@ -1,0 +1,118 @@
+# Requirements: Go URL Shortener
+
+**Defined:** 2026-02-14
+**Core Value:** Shorten a long URL and reliably redirect anyone who visits the short link
+
+## v1 Requirements
+
+Requirements for initial release. Each maps to roadmap phases.
+
+### URL Shortening
+
+- [ ] **URL-01**: User can submit a long URL via API and receive a short link with auto-generated code
+- [ ] **URL-02**: User visiting a short link is redirected (302) to the original URL
+- [ ] **URL-03**: API validates input URLs and returns clear error messages for invalid requests
+- [ ] **URL-04**: API returns 404 with meaningful error for non-existent short codes
+
+### Analytics
+
+- [ ] **ANLT-01**: Each redirect publishes a click event via Dapr pub/sub to the Analytics Service
+- [ ] **ANLT-02**: Analytics Service tracks total click count per short link
+- [ ] **ANLT-03**: User can query click stats for a short link via Analytics API
+- [ ] **ANLT-04**: Analytics Service tracks geo-location (country) from IP address
+- [ ] **ANLT-05**: Analytics Service tracks device/browser from User-Agent header
+- [ ] **ANLT-06**: Analytics Service tracks traffic source from Referer header
+
+### Link Management
+
+- [ ] **MGMT-01**: User can list all created short links via API
+
+### Infrastructure
+
+- [ ] **INFR-01**: URL Service and Analytics Service communicate via Dapr pub/sub
+- [ ] **INFR-02**: Services use Dapr service invocation for cross-service calls
+- [ ] **INFR-03**: API rate limiting prevents abuse
+- [ ] **INFR-04**: Clean architecture layers (handler → service → repository) in both services
+- [ ] **INFR-05**: SQLite for persistent storage via direct access
+
+### Production
+
+- [ ] **PROD-01**: Unit tests for all layers (handler, service, repository)
+- [ ] **PROD-02**: Integration tests with real Dapr sidecars
+- [ ] **PROD-03**: Docker Compose runs both services with Dapr sidecars
+- [ ] **PROD-04**: CI pipeline (lint, test, build) in GitHub Actions
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### URL Shortening
+
+- **URL-05**: User can specify a custom alias for their short link
+
+### Link Management
+
+- **MGMT-02**: Links can expire after a configurable time period
+- **MGMT-03**: User can create multiple short links in a single API call (bulk)
+- **MGMT-04**: API generates QR code for each short link
+
+### Infrastructure
+
+- **INFR-06**: Kubernetes manifests with proper resource limits and health probes
+- **INFR-07**: Resiliency policies (retries, circuit breakers, timeouts)
+- **INFR-08**: Distributed tracing and observability
+
+### Storage
+
+- **STOR-01**: Migrate from SQLite to PostgreSQL for production scale
+
+## Out of Scope
+
+Explicitly excluded. Documented to prevent scope creep.
+
+| Feature | Reason |
+|---------|--------|
+| Web UI / frontend | API-only learning project |
+| User accounts / authentication | Not needed for learning goals |
+| Password-protected links | Niche use case, adds friction to redirects |
+| Link editing (change destination) | Adds versioning complexity |
+| A/B testing / traffic splitting | High complexity, low learning value |
+| 301 permanent redirects | Breaks analytics, browsers cache forever |
+| Click fraud detection | Only needed at scale |
+| Webhook notifications | Defer until requested |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| URL-01 | — | Pending |
+| URL-02 | — | Pending |
+| URL-03 | — | Pending |
+| URL-04 | — | Pending |
+| ANLT-01 | — | Pending |
+| ANLT-02 | — | Pending |
+| ANLT-03 | — | Pending |
+| ANLT-04 | — | Pending |
+| ANLT-05 | — | Pending |
+| ANLT-06 | — | Pending |
+| MGMT-01 | — | Pending |
+| INFR-01 | — | Pending |
+| INFR-02 | — | Pending |
+| INFR-03 | — | Pending |
+| INFR-04 | — | Pending |
+| INFR-05 | — | Pending |
+| PROD-01 | — | Pending |
+| PROD-02 | — | Pending |
+| PROD-03 | — | Pending |
+| PROD-04 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 20 total
+- Mapped to phases: 0
+- Unmapped: 20
+
+---
+*Requirements defined: 2026-02-14*
+*Last updated: 2026-02-14 after initial definition*
