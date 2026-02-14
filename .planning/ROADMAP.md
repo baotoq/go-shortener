@@ -30,10 +30,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. API validates URLs and returns clear error messages for invalid input
   4. API returns 404 with meaningful error for non-existent short codes
   5. API rejects excessive requests from same client (rate limiting active)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 01-01-PLAN.md -- Project scaffold, Go module, SQLite schema, sqlc code generation
+- [ ] 01-02-PLAN.md -- Domain entities, repository implementation, URL service with business logic
+- [ ] 01-03-PLAN.md -- HTTP handlers, middleware, router, rate limiter, main.go wiring
 
 ### Phase 2: Event-Driven Analytics
 **Goal**: Click events are tracked asynchronously without blocking redirects
@@ -98,7 +100,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & URL Service Core | 0/TBD | Not started | - |
+| 1. Foundation & URL Service Core | 0/3 | Planned | - |
 | 2. Event-Driven Analytics | 0/TBD | Not started | - |
 | 3. Enhanced Analytics | 0/TBD | Not started | - |
 | 4. Link Management | 0/TBD | Not started | - |
