@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-14)
 ## Current Position
 
 Phase: 1 of 5 (Foundation & URL Service Core)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress — executing plans
-Last activity: 2026-02-15 — Completed 01-01-PLAN.md: Project foundation with Go module, SQLite schema, and sqlc code generation
+Last activity: 2026-02-14 — Completed 01-02-PLAN.md: Business logic layer with domain entities, repository interface, and URL service
 
-Progress: [██░░░░░░░░] 6.67%
+Progress: [████░░░░░░] 13.33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 3m 53s
-- Total execution time: 0.06 hours
+- Total plans completed: 2
+- Average duration: 3m 2s
+- Total execution time: 0.10 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation-url-service-core | 1 | 3m 53s | 3m 53s |
+| 01-foundation-url-service-core | 2 | 6m 5s | 3m 2s |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3m 53s)
-- Trend: N/A (need more data)
+- Last 5 plans: 01-01 (3m 53s), 01-02 (2m 12s)
+- Trend: Improving (faster execution)
 
 *Updated after each plan completion*
 
@@ -48,6 +48,9 @@ Recent decisions affecting current work:
 - Clean architecture: Learn production Go patterns (layered, testable, swappable)
 - Used sqlc for type-safe SQL queries instead of ORM (01-01): Compile-time safety with full SQL control
 - Added UNIQUE index on original_url for deduplication support (01-01): Returns same short code for duplicate URLs
+- URLRepository interface in usecase package (01-02): Dependency inversion - service depends on abstraction
+- 8-char NanoID with 62-char alphabet (01-02): ~218 trillion possible combinations for short codes
+- URL validation rules (01-02): http/https only, host required, max 2048 chars, localhost allowed
 
 ### Pending Todos
 
@@ -65,8 +68,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-15
-Stopped at: Completed 01-01-PLAN.md (Project Foundation) - Ready for 01-02-PLAN.md
+Last session: 2026-02-14
+Stopped at: Completed 01-02-PLAN.md (Business Logic Layer) - Ready for 01-03-PLAN.md
 Resume file: None
 
 ---
