@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-14)
 
 **Core value:** Shorten a long URL and reliably redirect anyone who visits the short link
-**Current focus:** Phase 5 - Production Readiness
+**Current focus:** Phase 6 - Test Coverage Hardening
 
 ## Current Position
 
-Phase: 5 of 5 (Production Readiness)
-Plan: 5 of 5 completed (01, 02, 03, 04, 05)
+Phase: 6 of 6 (Test Coverage Hardening)
+Plan: 2 of 2 completed (01, 02)
 Status: Complete
-Last activity: 2026-02-15 — Completed 05-05-PLAN.md: GitHub Actions CI pipeline with coverage enforcement
+Last activity: 2026-02-15 — Completed 06-02-PLAN.md: Dapr sidecar integration tests with real Docker containers
 
 Progress: [██████████] 100.00%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
-- Average duration: 3m 18s
-- Total execution time: 0.82 hours
+- Total plans completed: 18
+- Average duration: 3m 22s
+- Total execution time: 1.01 hours
 
 **By Phase:**
 
@@ -32,13 +32,17 @@ Progress: [██████████] 100.00%
 | 03-enhanced-analytics | 3 | 8m 32s | 2m 51s |
 | 04-link-management | 2 | 8m 5s | 4m 3s |
 | 05-production-readiness | 5 | ~26m | ~5m 12s |
+| 06-test-coverage-hardening | 2 | ~8m | ~4m |
 
 **Recent Trend:**
-- Last 5 plans: 05-01 (9m 14s), 05-04 (2m 23s), 05-02 (6m 54s), 05-05 (~3m)
-- Trend: Variable (testing plans longer, infrastructure plans shorter)
+- Last 5 plans: 05-04 (2m 23s), 05-02 (6m 54s), 05-05 (~3m), 06-01 (~4m), 06-02 (4m 3s)
+- Trend: Consistent 3-4 minute range for focused test additions
 
 *Updated after each plan completion*
-| Phase 05 P02 | 414 | 2 tasks | 3 files |
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 06 P02 | 243s (4m 3s) | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -102,6 +106,10 @@ Recent decisions affecting current work:
 - [Phase 05-05]: CI triggers on PRs and pushes to main/master only (not all branches)
 - [Phase 05-05]: 80% total coverage threshold with overrides for generated/cmd code
 - [Phase 05-05]: Docker images built in CI but not pushed (no registry yet)
+- [Phase 06-02]: Integration tests use //go:build integration tag to prevent running in normal go test ./...
+- [Phase 06-02]: Docker Compose orchestration via os/exec for test environments (simpler than testcontainers compose)
+- [Phase 06-02]: Polling-based verification with 30s timeout for async event delivery in integration tests
+- [Phase 06-02]: Integration tests run as separate CI job after build (ubuntu-latest has Docker pre-installed)
 
 ### Pending Todos
 
@@ -116,7 +124,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed Phase 5 (Production Readiness) — all 5 plans executed
+Stopped at: Completed Phase 6 Plan 02 (Test Coverage Hardening) — Dapr sidecar integration tests
 Resume file: None
 
 ---
