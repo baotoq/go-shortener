@@ -78,7 +78,7 @@ func main() {
 
 	// Wire dependencies
 	repo := sqlite.NewURLRepository(db)
-	service := usecase.NewURLService(repo)
+	service := usecase.NewURLService(repo, daprClient, logger, baseURL)
 	handler := httpdelivery.NewHandler(service, baseURL, daprClient, logger)
 	rateLimiter := httpdelivery.NewRateLimiter(rateLimit)
 	router := httpdelivery.NewRouter(handler, logger, rateLimiter)

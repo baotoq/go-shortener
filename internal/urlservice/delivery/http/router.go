@@ -24,8 +24,14 @@ func NewRouter(handler *Handler, logger *zap.Logger, rateLimiter *RateLimiter) h
 
 	// API v1 routes
 	r.Route("/api/v1", func(r chi.Router) {
+		// URL shortening routes
 		r.Post("/urls", handler.CreateShortURL)
 		r.Get("/urls/{code}", handler.GetURLDetails)
+
+		// Link management routes
+		r.Get("/links", handler.ListLinks)
+		r.Get("/links/{code}", handler.GetLinkDetail)
+		r.Delete("/links/{code}", handler.DeleteLink)
 	})
 
 	return r

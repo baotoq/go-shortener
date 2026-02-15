@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
@@ -203,6 +204,131 @@ func (h *Handler) GetURLDetails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, response)
+}
+
+// ListLinks handles GET /api/v1/links
+func (h *Handler) ListLinks(w http.ResponseWriter, r *http.Request) {
+	// Parse query parameters
+	query := r.URL.Query()
+
+	page := 1
+	if p := query.Get("page"); p != "" {
+		if parsed, err := parseInt(p); err == nil && parsed >= 1 {
+			page = parsed
+		}
+	}
+
+	perPage := 20
+	if pp := query.Get("per_page"); pp != "" {
+		if parsed, err := parseInt(pp); err == nil && parsed >= 1 && parsed <= 100 {
+			perPage = parsed
+		}
+	}
+
+	sort := query.Get("sort")
+	if sort == "" {
+		sort = "created_at"
+	}
+
+	order := query.Get("order")
+	if order == "" {
+		order = "desc"
+	}
+
+	// Parse date filters
+	var createdAfter, createdBefore time.Time
+	if ca := query.Get("created_after"); ca != "" {
+		if parsed, err := time.Parse("2006-01-02", ca); err == nil {
+			createdAfter = parsed
+		}
+	}
+	if cb := query.Get("created_before"); cb != "" {
+		if parsed, err := time.Parse("2006-01-02", cb); err == nil {
+			// Add end-of-day to include the entire date
+			createdBefore = parsed.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+		}
+	}
+
+	search := query.Get("search")
+
+	// Call service
+	result, err := h.service.ListLinks(r.Context(), usecase.ListLinksParams{
+		Page:          page,
+		PerPage:       perPage,
+		Sort:          sort,
+		Order:         order,
+		CreatedAfter:  createdAfter,
+		CreatedBefore: createdBefore,
+		Search:        search,
+	})
+	if err != nil {
+		problem := problemdetails.New(
+			http.StatusInternalServerError,
+			problemdetails.TypeInternalError,
+			"Internal Server Error",
+			"Failed to list links",
+		)
+		writeProblem(w, problem)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// GetLinkDetail handles GET /api/v1/links/{code}
+func (h *Handler) GetLinkDetail(w http.ResponseWriter, r *http.Request) {
+	code := chi.URLParam(r, "code")
+
+	link, err := h.service.GetLinkDetail(r.Context(), code)
+	if err != nil {
+		if errors.Is(err, domain.ErrURLNotFound) {
+			problem := problemdetails.New(
+				http.StatusNotFound,
+				problemdetails.TypeNotFound,
+				"Not Found",
+				"Link not found: "+code,
+			)
+			writeProblem(w, problem)
+			return
+		}
+
+		problem := problemdetails.New(
+			http.StatusInternalServerError,
+			problemdetails.TypeInternalError,
+			"Internal Server Error",
+			"Failed to get link details",
+		)
+		writeProblem(w, problem)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, link)
+}
+
+// DeleteLink handles DELETE /api/v1/links/{code}
+func (h *Handler) DeleteLink(w http.ResponseWriter, r *http.Request) {
+	code := chi.URLParam(r, "code")
+
+	if err := h.service.DeleteLink(r.Context(), code); err != nil {
+		problem := problemdetails.New(
+			http.StatusInternalServerError,
+			problemdetails.TypeInternalError,
+			"Internal Server Error",
+			"Failed to delete link",
+		)
+		writeProblem(w, problem)
+		return
+	}
+
+	// 204 No Content (idempotent - always returns 204 even if link didn't exist)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// parseInt parses a string to int, returns error if invalid
+func parseInt(s string) (int, error) {
+	var result int
+	_, err := fmt.Sscanf(s, "%d", &result)
+	return result, err
 }
 
 const (
