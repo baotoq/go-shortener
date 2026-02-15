@@ -99,52 +99,52 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FWRK-01 | — | Pending |
-| FWRK-02 | — | Pending |
-| FWRK-03 | — | Pending |
-| FWRK-04 | — | Pending |
-| FWRK-05 | — | Pending |
-| FWRK-06 | — | Pending |
-| FWRK-07 | — | Pending |
-| FWRK-08 | — | Pending |
-| FWRK-09 | — | Pending |
-| DBMG-01 | — | Pending |
-| DBMG-02 | — | Pending |
-| DBMG-03 | — | Pending |
-| DBMG-04 | — | Pending |
-| DBMG-05 | — | Pending |
-| DBMG-06 | — | Pending |
-| DBMG-07 | — | Pending |
-| MSNG-01 | — | Pending |
-| MSNG-02 | — | Pending |
-| MSNG-03 | — | Pending |
-| MSNG-04 | — | Pending |
-| MSNG-05 | — | Pending |
-| MSNG-06 | — | Pending |
-| SRVC-01 | — | Pending |
-| SRVC-02 | — | Pending |
-| SRVC-03 | — | Pending |
-| SRVC-04 | — | Pending |
-| RESL-01 | — | Pending |
-| RESL-02 | — | Pending |
-| RESL-03 | — | Pending |
-| RESL-04 | — | Pending |
-| RESL-05 | — | Pending |
-| RESL-06 | — | Pending |
-| INFR-01 | — | Pending |
-| INFR-02 | — | Pending |
-| INFR-03 | — | Pending |
-| INFR-04 | — | Pending |
-| TEST-01 | — | Pending |
-| TEST-02 | — | Pending |
-| TEST-03 | — | Pending |
-| TEST-04 | — | Pending |
+| FWRK-01 | Phase 7 | Pending |
+| FWRK-02 | Phase 7 | Pending |
+| FWRK-03 | Phase 7 | Pending |
+| FWRK-04 | Phase 7 | Pending |
+| FWRK-05 | Phase 7 | Pending |
+| FWRK-06 | Phase 7 | Pending |
+| FWRK-07 | Phase 7 | Pending |
+| FWRK-08 | Phase 7 | Pending |
+| FWRK-09 | Phase 7 | Pending |
+| DBMG-01 | Phase 8 | Pending |
+| DBMG-02 | Phase 8 | Pending |
+| DBMG-03 | Phase 8 | Pending |
+| DBMG-04 | Phase 8 | Pending |
+| DBMG-05 | Phase 8 | Pending |
+| DBMG-06 | Phase 8 | Pending |
+| DBMG-07 | Phase 8 | Pending |
+| MSNG-01 | Phase 9 | Pending |
+| MSNG-02 | Phase 9 | Pending |
+| MSNG-03 | Phase 9 | Pending |
+| MSNG-04 | Phase 9 | Pending |
+| MSNG-05 | Phase 9 | Pending |
+| MSNG-06 | Phase 9 | Pending |
+| SRVC-01 | Phase 9 | Pending |
+| SRVC-02 | Phase 9 | Pending |
+| SRVC-03 | Phase 9 | Pending |
+| SRVC-04 | Phase 9 | Pending |
+| RESL-01 | Phase 10 | Pending |
+| RESL-02 | Phase 10 | Pending |
+| RESL-03 | Phase 10 | Pending |
+| RESL-04 | Phase 10 | Pending |
+| RESL-05 | Phase 10 | Pending |
+| RESL-06 | Phase 10 | Pending |
+| INFR-01 | Phase 10 | Pending |
+| INFR-02 | Phase 10 | Pending |
+| INFR-03 | Phase 10 | Pending |
+| INFR-04 | Phase 10 | Pending |
+| TEST-01 | Phase 10 | Pending |
+| TEST-02 | Phase 10 | Pending |
+| TEST-03 | Phase 10 | Pending |
+| TEST-04 | Phase 10 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 39 total
-- Mapped to phases: 0
-- Unmapped: 39 ⚠️
+- Mapped to phases: 39
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-15*
-*Last updated: 2026-02-15 after initial definition*
+*Last updated: 2026-02-15 after v2.0 roadmap creation*
