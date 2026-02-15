@@ -35,6 +35,8 @@ func NewRouter(handler *Handler, logger *zap.Logger) http.Handler {
 
 	// Analytics API
 	r.Get("/analytics/{code}", handler.GetClickCount)
+	r.Get("/analytics/{code}/summary", handler.GetAnalyticsSummary)
+	r.Get("/analytics/{code}/clicks", handler.GetClickDetails)
 
 	return r
 }
