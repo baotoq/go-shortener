@@ -9,3 +9,12 @@ sql:
         out: "internal/urlservice/repository/sqlite/sqlc"
         emit_json_tags: true
         emit_interface: true
+  - engine: "sqlite"
+    queries: "db/analytics_query.sql"
+    schema: "db/analytics_schema.sql"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/analytics/repository/sqlite/sqlc"
+        emit_json_tags: true
+        emit_interface: true

@@ -1,0 +1,5 @@
+CREATE TABLE clicks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    short_code TEXT NOT NULL,
+    clicked_at INTEGER NOT NULL
+);
