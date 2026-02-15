@@ -13,7 +13,7 @@ This roadmap delivers a URL shortener built with Go and Dapr in 5 phases. We sta
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & URL Service Core** - Shorten URLs and redirect users with clean architecture
-- [ ] **Phase 2: Event-Driven Analytics** - Track clicks asynchronously via Dapr pub/sub
+- [x] **Phase 2: Event-Driven Analytics** - Track clicks asynchronously via Dapr pub/sub
 - [ ] **Phase 3: Enhanced Analytics** - Geo-location, device, and traffic source tracking
 - [ ] **Phase 4: Link Management** - List and manage created short links
 - [ ] **Phase 5: Production Readiness** - Testing, CI/CD, Docker, and production deployment
@@ -49,9 +49,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- Restructure repo for multi-service, Dapr infrastructure, shared event types
-- [ ] 02-02-PLAN.md -- URL Service Dapr pub/sub click event publishing
-- [ ] 02-03-PLAN.md -- Analytics Service (schema, repository, usecase, handler, Dapr subscription)
+- [x] 02-01-PLAN.md -- Restructure repo for multi-service, Dapr infrastructure, shared event types
+- [x] 02-02-PLAN.md -- URL Service Dapr pub/sub click event publishing
+- [x] 02-03-PLAN.md -- Analytics Service (schema, repository, usecase, handler, Dapr subscription)
 
 ### Phase 3: Enhanced Analytics
 **Goal**: Analytics include rich context (geo-location, device, traffic source)
@@ -103,7 +103,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & URL Service Core | 3/3 | ✓ Complete | 2026-02-15 |
-| 2. Event-Driven Analytics | 0/3 | Not started | - |
+| 2. Event-Driven Analytics | 3/3 | ✓ Complete | 2026-02-15 |
 | 3. Enhanced Analytics | 0/TBD | Not started | - |
 | 4. Link Management | 0/TBD | Not started | - |
 | 5. Production Readiness | 0/TBD | Not started | - |
