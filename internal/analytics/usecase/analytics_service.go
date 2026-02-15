@@ -15,7 +15,8 @@ func NewAnalyticsService(repo ClickRepository) *AnalyticsService {
 
 // RecordClick stores a click event
 func (s *AnalyticsService) RecordClick(ctx context.Context, event events.ClickEvent) error {
-	return s.repo.InsertClick(ctx, event.ShortCode, event.Timestamp.Unix())
+	// TODO(03-03): wire enrichment services to populate these fields
+	return s.repo.InsertClick(ctx, event.ShortCode, event.Timestamp.Unix(), "", "", "")
 }
 
 // GetClickCount returns total clicks for a short code
