@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Enhanced Analytics** - Geo-location, device, and traffic source tracking
 - [x] **Phase 4: Link Management** - List and manage created short links
 - [x] **Phase 5: Production Readiness** - Testing, CI/CD, Docker, and production deployment
-- [ ] **Phase 6: Test Coverage Hardening** - Close handler coverage gap and add Dapr sidecar integration tests
+- [x] **Phase 6: Test Coverage Hardening** - Close handler coverage gap and add Dapr sidecar integration tests
 
 ## Phase Details
 
@@ -116,8 +116,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 06-01-PLAN.md -- Increase URL Service handler test coverage to 80%+
-- [ ] 06-02-PLAN.md -- Add Dapr sidecar integration tests (real pub/sub + service invocation)
+- [x] 06-01-PLAN.md -- Increase URL Service handler test coverage to 80%+
+- [x] 06-02-PLAN.md -- Add Dapr sidecar integration tests (real pub/sub + service invocation)
 
 ## Progress
 
@@ -131,7 +131,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Enhanced Analytics | 3/3 | ✓ Complete | 2026-02-15 |
 | 4. Link Management | 2/2 | ✓ Complete | 2026-02-15 |
 | 5. Production Readiness | 5/5 | ✓ Complete | 2026-02-15 |
-| 6. Test Coverage Hardening | 0/2 | In Progress | — |
+| 6. Test Coverage Hardening | 2/2 | ✓ Complete | 2026-02-15 |
 
 ---
 *Roadmap created: 2026-02-14*
