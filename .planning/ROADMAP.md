@@ -77,10 +77,11 @@ Plans:
   1. User can list all created short links via API
   2. API returns link metadata (original URL, short code, creation date)
   3. List supports pagination for large result sets
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 04-01-PLAN.md -- URL Service list, detail, delete endpoints with pagination, filtering, search, and click count enrichment
+- [ ] 04-02-PLAN.md -- Analytics Service link-deleted event subscription and click data cascade deletion
 
 ### Phase 5: Production Readiness
 **Goal**: Services are tested, containerized, and deployable to production
@@ -107,7 +108,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Foundation & URL Service Core | 3/3 | ✓ Complete | 2026-02-15 |
 | 2. Event-Driven Analytics | 3/3 | ✓ Complete | 2026-02-15 |
 | 3. Enhanced Analytics | 3/3 | ✓ Complete | 2026-02-15 |
-| 4. Link Management | 0/TBD | Not started | - |
+| 4. Link Management | 0/2 | Not started | - |
 | 5. Production Readiness | 0/TBD | Not started | - |
 
 ---
