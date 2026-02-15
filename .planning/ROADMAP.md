@@ -93,10 +93,14 @@ Plans:
   3. Docker Compose starts both services with Dapr sidecars locally
   4. CI pipeline (lint, test, build) runs on every commit via GitHub Actions
   5. Services use Dapr service invocation for cross-service calls when needed
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 05-01-PLAN.md -- Mockery setup, mock generation, URL Service usecase unit tests
+- [ ] 05-02-PLAN.md -- Analytics usecase tests, handler tests for both services
+- [ ] 05-03-PLAN.md -- Health check endpoints, repository integration tests
+- [ ] 05-04-PLAN.md -- Dockerfiles, Docker Compose with Dapr sidecars, golangci-lint config
+- [ ] 05-05-PLAN.md -- GitHub Actions CI pipeline, coverage thresholds, Makefile targets
 
 ## Progress
 
@@ -109,7 +113,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Event-Driven Analytics | 3/3 | ✓ Complete | 2026-02-15 |
 | 3. Enhanced Analytics | 3/3 | ✓ Complete | 2026-02-15 |
 | 4. Link Management | 2/2 | ✓ Complete | 2026-02-15 |
-| 5. Production Readiness | 0/TBD | Not started | - |
+| 5. Production Readiness | 0/5 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-14*
