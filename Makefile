@@ -42,5 +42,12 @@ test-coverage:
 lint:
 	golangci-lint run --timeout 5m
 
+# Run integration tests (requires Docker)
+test-integration:
+	go test -tags integration -v -timeout 5m ./test/integration/
+
 # Run all CI checks locally
 ci: lint test-coverage build
+
+# Run all CI checks locally (including integration)
+ci-full: lint test-coverage build test-integration
