@@ -33,3 +33,7 @@ func (m *MockDaprClient) PublishEvent(ctx context.Context, pubsubName, topicName
 func (m *MockDaprClient) Close() {
 	m.Called()
 }
+
+func (m *MockDaprClient) ConverseAlpha1(ctx context.Context, req interface{}) (interface{}, error) {
+	panic("not implemented: ConverseAlpha1")
+}

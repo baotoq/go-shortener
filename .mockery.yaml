@@ -1,4 +1,4 @@
-dir: "{{.InterfaceDir}}/mocks"
+dir: "{{.InterfaceDir}}/../testutil/mocks"
 pkgname: mocks
 structname: "Mock{{.InterfaceName}}"
 filename: "{{.InterfaceName}}.go"
@@ -6,6 +6,7 @@ packages:
   go-shortener/internal/urlservice/usecase:
     interfaces:
       URLRepository:
+      DaprClient:
   go-shortener/internal/analytics/usecase:
     interfaces:
       ClickRepository:

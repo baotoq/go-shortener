@@ -13,7 +13,6 @@ import (
 	"go-shortener/internal/shared/events"
 	"go-shortener/internal/urlservice/domain"
 
-	dapr "github.com/dapr/go-sdk/client"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"go.uber.org/zap"
 )
@@ -29,13 +28,13 @@ const (
 // URLService implements the core business logic for URL shortening
 type URLService struct {
 	repo       URLRepository
-	daprClient dapr.Client // may be nil
+	daprClient DaprClient // may be nil
 	logger     *zap.Logger
 	baseURL    string
 }
 
 // NewURLService creates a new URL service
-func NewURLService(repo URLRepository, daprClient dapr.Client, logger *zap.Logger, baseURL string) *URLService {
+func NewURLService(repo URLRepository, daprClient DaprClient, logger *zap.Logger, baseURL string) *URLService {
 	return &URLService{
 		repo:       repo,
 		daprClient: daprClient,
