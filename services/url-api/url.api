@@ -1,0 +1,101 @@
+syntax = "v1"
+
+info (
+	title:   "URL Shortener API"
+	desc:    "URL shortening and redirect service"
+	author:  "go-shortener"
+	version: "v2.0"
+)
+
+// ========== Shorten Types ==========
+type ShortenRequest {
+	OriginalUrl string `json:"original_url"`
+}
+
+type ShortenResponse {
+	ShortCode   string `json:"short_code"`
+	ShortUrl    string `json:"short_url"`
+	OriginalUrl string `json:"original_url"`
+}
+
+// ========== Link Management Types ==========
+type LinkListRequest {
+	Page    int    `form:"page,default=1,range=[1:]"`
+	PerPage int    `form:"per_page,default=20,range=[1:100]"`
+	Sort    string `form:"sort,default=created_at,options=created_at|original_url"`
+	Order   string `form:"order,default=desc,options=asc|desc"`
+	Search  string `form:"search,optional"`
+}
+
+type LinkItem {
+	ShortCode   string `json:"short_code"`
+	OriginalUrl string `json:"original_url"`
+	CreatedAt   int64  `json:"created_at"`
+}
+
+type LinkListResponse {
+	Links      []LinkItem `json:"links"`
+	Page       int        `json:"page"`
+	PerPage    int        `json:"per_page"`
+	TotalPages int        `json:"total_pages"`
+	TotalCount int64      `json:"total_count"`
+}
+
+type LinkDetailRequest {
+	Code string `path:"code"`
+}
+
+type LinkDetailResponse {
+	ShortCode   string `json:"short_code"`
+	OriginalUrl string `json:"original_url"`
+	CreatedAt   int64  `json:"created_at"`
+	TotalClicks int64  `json:"total_clicks"`
+}
+
+type DeleteLinkRequest {
+	Code string `path:"code"`
+}
+
+// ========== Redirect Types ==========
+type RedirectRequest {
+	Code string `path:"code"`
+}
+
+// ========== Service Groups ==========
+@server (
+	prefix: /api/v1
+	group:  shorten
+)
+service url {
+	@doc "Create short URL"
+	@handler Shorten
+	post /urls (ShortenRequest) returns (ShortenResponse)
+}
+
+@server (
+	group: redirect
+)
+service url {
+	@doc "Redirect to original URL"
+	@handler Redirect
+	get /:code (RedirectRequest)
+}
+
+@server (
+	prefix: /api/v1
+	group:  links
+)
+service url {
+	@doc "List all links with pagination"
+	@handler ListLinks
+	get /links (LinkListRequest) returns (LinkListResponse)
+
+	@doc "Get link details"
+	@handler GetLinkDetail
+	get /links/:code (LinkDetailRequest) returns (LinkDetailResponse)
+
+	@doc "Delete link"
+	@handler DeleteLink
+	delete /links/:code (DeleteLinkRequest)
+}
+
