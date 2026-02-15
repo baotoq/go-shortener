@@ -1,0 +1,11 @@
+threshold:
+  total: 80
+  package: 70
+
+override:
+  - path: "go-shortener/internal/urlservice/repository/sqlite/sqlc"
+    threshold: 0  # Generated code, skip coverage
+  - path: "go-shortener/internal/analytics/repository/sqlite/sqlc"
+    threshold: 0  # Generated code, skip coverage
+  - path: "go-shortener/cmd"
+    threshold: 50  # Main packages are harder to unit test

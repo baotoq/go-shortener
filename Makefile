@@ -1,4 +1,4 @@
-.PHONY: run-url run-analytics run-all build generate-mocks docker-up docker-down
+.PHONY: run-url run-analytics run-all build generate-mocks docker-up docker-down test test-coverage lint ci
 
 # Run URL Service with Dapr sidecar
 run-url:
@@ -28,3 +28,19 @@ docker-up:
 # Stop all services
 docker-down:
 	docker compose down
+
+# Run all tests
+test:
+	go test -v -race ./...
+
+# Run tests with coverage report
+test-coverage:
+	go test -race -coverprofile=coverage.out -covermode=atomic ./...
+	go tool cover -func=coverage.out
+
+# Run linter
+lint:
+	golangci-lint run --timeout 5m
+
+# Run all CI checks locally
+ci: lint test-coverage build
