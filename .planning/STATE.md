@@ -83,10 +83,6 @@ None yet.
 
 ### Blockers/Concerns
 
-**Phase 3 (Enhanced Analytics):**
-- IP geolocation library needs evaluation during planning (free vs paid, accuracy, rate limits, privacy)
-- User-Agent parsing strategy needs selection
-
 **Phase 5 (Production Readiness):**
 - PostgreSQL migration strategy from SQLite needs planning
 - Sidecar resource limits must be configured from day one
