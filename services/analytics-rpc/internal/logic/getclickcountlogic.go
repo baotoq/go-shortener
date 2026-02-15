@@ -28,10 +28,17 @@ func (l *GetClickCountLogic) GetClickCount(in *analytics.GetClickCountRequest) (
 		logx.Field("short_code", in.ShortCode),
 	)
 
-	// Phase 7 stub: return fake click count
-	// Phase 8: Query PostgreSQL for actual click count
+	count, err := l.svcCtx.ClickModel.CountByShortCode(l.ctx, in.ShortCode)
+	if err != nil {
+		logx.WithContext(l.ctx).Errorw("failed to get click count",
+			logx.Field("short_code", in.ShortCode),
+			logx.Field("error", err.Error()),
+		)
+		return nil, err
+	}
+
 	return &analytics.GetClickCountResponse{
 		ShortCode:   in.ShortCode,
-		TotalClicks: 42,
+		TotalClicks: count,
 	}, nil
 }

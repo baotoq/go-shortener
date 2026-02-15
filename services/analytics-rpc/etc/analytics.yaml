@@ -6,5 +6,4 @@ Log:
   Mode: console
   Level: info
 
-# Phase 7: No etcd, no database, no Kafka
-# go-zero zRPC defaults to direct connection mode when Etcd is not configured
+DataSource: postgres://postgres:postgres@localhost:5433/shortener?sslmode=disable
