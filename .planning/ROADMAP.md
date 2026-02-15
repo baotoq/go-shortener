@@ -35,11 +35,12 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   3. Request validation works via .api tag rules (no manual validation code needed)
   4. Error responses use RFC 7807 Problem Details format via custom httpx.SetErrorHandler
   5. Services start successfully and load configuration from YAML files
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
+- [ ] 07-01-PLAN.md — Clean v1.0 code, install go-zero, create project scaffold
+- [ ] 07-02-PLAN.md — URL API service (.api spec, code gen, error handler, stub logic)
+- [ ] 07-03-PLAN.md — Analytics RPC service (.proto spec, zRPC gen, stub logic)
 
 #### Phase 8: Database Migration
 **Goal**: Migrate from SQLite to PostgreSQL with goctl-generated models
@@ -102,11 +103,11 @@ Phases execute in numeric order: 7 → 8 → 9 → 10
 | 4. Link Management | v1.0 | 2/2 | ✓ Complete | 2026-02-15 |
 | 5. Production Readiness | v1.0 | 5/5 | ✓ Complete | 2026-02-15 |
 | 6. Test Coverage Hardening | v1.0 | 2/2 | ✓ Complete | 2026-02-15 |
-| 7. Framework Foundation | v2.0 | 0/TBD | Not started | - |
+| 7. Framework Foundation | v2.0 | 0/3 | Not started | - |
 | 8. Database Migration | v2.0 | 0/TBD | Not started | - |
 | 9. Messaging Migration | v2.0 | 0/TBD | Not started | - |
 | 10. Resilience & Infrastructure | v2.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-14*
-*Last updated: 2026-02-15 after v2.0 roadmap creation*
+*Last updated: 2026-02-16 after Phase 7 planning*

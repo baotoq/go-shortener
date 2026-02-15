@@ -9,6 +9,7 @@ metadata:
   role: specialist
   scope: implementation
   output-format: code
+  related-skills: golang-patterns, golang-testing, zero-skills
 ---
 
 # DDD Tactical Design Patterns in Go
