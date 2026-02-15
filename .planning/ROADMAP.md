@@ -55,9 +55,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — PostgreSQL setup (Docker Compose, migrations, goctl model generation)
-- [ ] 08-02-PLAN.md — URL API service (wire models, replace stubs with real DB operations)
-- [ ] 08-03-PLAN.md — Analytics RPC service (wire click model, real GetClickCount query)
+- [x] 08-01-PLAN.md — PostgreSQL setup (Docker Compose, migrations, goctl model generation)
+- [x] 08-02-PLAN.md — URL API service (wire models, replace stubs with real DB operations)
+- [x] 08-03-PLAN.md — Analytics RPC service (wire click model, real GetClickCount query)
 
 #### Phase 9: Messaging Migration
 **Goal**: Replace Dapr pub/sub with Kafka via go-queue and add zRPC service communication
@@ -105,10 +105,10 @@ Phases execute in numeric order: 7 → 8 → 9 → 10
 | 5. Production Readiness | v1.0 | 5/5 | ✓ Complete | 2026-02-15 |
 | 6. Test Coverage Hardening | v1.0 | 2/2 | ✓ Complete | 2026-02-15 |
 | 7. Framework Foundation | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
-| 8. Database Migration | v2.0 | 0/3 | Not started | - |
+| 8. Database Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 9. Messaging Migration | v2.0 | 0/TBD | Not started | - |
 | 10. Resilience & Infrastructure | v2.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-14*
-*Last updated: 2026-02-16 after Phase 7 execution complete*
+*Last updated: 2026-02-16 after Phase 8 execution complete*
