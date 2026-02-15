@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package analytics;
+
+option go_package = "./analytics";
+
+// ========== Messages ==========
+
+message GetClickCountRequest {
+  string short_code = 1;
+}
+
+message GetClickCountResponse {
+  string short_code = 1;
+  int64 total_clicks = 2;
+}
+
+// ========== Service ==========
+
+// Analytics provides click analytics for shortened URLs.
+// Phase 7: GetClickCount only (minimal scope).
+// Phase 9: Add GetAnalyticsSummary when Kafka consumer is wired.
+service Analytics {
+  rpc GetClickCount(GetClickCountRequest) returns (GetClickCountResponse);
+}
