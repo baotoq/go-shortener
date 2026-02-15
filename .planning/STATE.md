@@ -2,17 +2,16 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-14)
+See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Shorten a long URL and reliably redirect anyone who visits the short link
-**Current focus:** Phase 6 - Test Coverage Hardening
+**Current focus:** v1.0 milestone complete — planning next milestone
 
 ## Current Position
 
-Phase: 6 of 6 (Test Coverage Hardening)
-Plan: 2 of 2 completed (01, 02)
-Status: Complete
-Last activity: 2026-02-15 — Completed 06-02-PLAN.md: Dapr sidecar integration tests with real Docker containers
+Milestone: v1.0 MVP — SHIPPED 2026-02-15
+Phase: 6 of 6 (all complete)
+Status: Milestone complete
 
 Progress: [██████████] 100.00%
 
@@ -21,7 +20,7 @@ Progress: [██████████] 100.00%
 **Velocity:**
 - Total plans completed: 18
 - Average duration: 3m 22s
-- Total execution time: 1.01 hours
+- Total execution time: ~1 hour
 
 **By Phase:**
 
@@ -34,97 +33,27 @@ Progress: [██████████] 100.00%
 | 05-production-readiness | 5 | ~26m | ~5m 12s |
 | 06-test-coverage-hardening | 2 | ~8m | ~4m |
 
-**Recent Trend:**
-- Last 5 plans: 05-04 (2m 23s), 05-02 (6m 54s), 05-05 (~3m), 06-01 (~4m), 06-02 (4m 3s)
-- Trend: Consistent 3-4 minute range for focused test additions
-
-*Updated after each plan completion*
-
-| Plan | Duration | Tasks | Files |
-|------|----------|-------|-------|
-| Phase 06 P02 | 243s (4m 3s) | 2 tasks | 7 files |
-
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- 2 services (URL + Analytics): Clear separation of concerns, natural pub/sub boundary
-- SQLite over Dapr state store: Learn raw DB access alongside Dapr; keep storage simple
-- Dapr for inter-service communication: Learn distributed patterns (pub/sub, service invocation)
-- Clean architecture: Learn production Go patterns (layered, testable, swappable)
-- Used sqlc for type-safe SQL queries instead of ORM (01-01): Compile-time safety with full SQL control
-- Added UNIQUE index on original_url for deduplication support (01-01): Returns same short code for duplicate URLs
-- URLRepository interface in usecase package (01-02): Dependency inversion - service depends on abstraction
-- 8-char NanoID with 62-char alphabet (01-02): ~218 trillion possible combinations for short codes
-- URL validation rules (01-02): http/https only, host required, max 2048 chars, localhost allowed
-- Chi router for HTTP routing (01-03): Idiomatic Go, good middleware support
-- Zap for structured logging (01-03): High performance, type-safe
-- RFC 7807 Problem Details for all errors (01-03): Standardized API error responses
-- Per-IP rate limiting 100 req/min (01-03): Simple and effective for single instance
-- Embedded migrations with golang-migrate (01-03): Self-contained binary deployment
-- SQLite WAL mode (01-03): Better concurrency for single connection pool
-- [Phase 02-01]: ClickEvent minimal payload (short_code + timestamp only)
-- [Phase 02-01]: In-memory pub/sub for development (persistence not needed yet)
-- [Phase 02-02]: Fire-and-forget click event publishing in goroutine (user never blocked)
-- [Phase 02-02]: Graceful degradation when Dapr unavailable (nil-safe client)
-- [Phase 02-03]: Individual click records stored (one row per click) for future time-range queries
-- [Phase 02-03]: Zero clicks returns 200 with total_clicks: 0, not 404
-- [Phase 02-03]: Analytics Service on separate port 8081 with own HTTP server
-- [Phase 02-03]: Separate SQLite database (analytics.db) for service isolation
-- [Phase 02-03]: CloudEvent unwrapping in Dapr event handler (extract data field)
-- [Phase 03-02]: DEFAULT values for enrichment columns (backward compatibility with Phase 2 clicks)
-- [Phase 03-02]: Base64-encoded cursor pagination using timestamp (simple, URL-safe)
-- [Phase 03-02]: Composite indexes for time-range and GROUP BY query optimization
-- [Phase 03-02]: Fetch limit+1 for hasMore detection (single query, no COUNT(*))
-- [Phase 03-03]: Interface-based enrichment service injection (GeoIPResolver, DeviceDetector, RefererClassifier)
-- [Phase 03-03]: Fallback to "Unknown" when GeoIP database unavailable (graceful degradation)
-- [Phase 03-03]: Time-range filtering with YYYY-MM-DD format and end-of-day adjustment
-- [Phase 03-03]: Percentage formatted as string with % suffix (e.g., "58.3%") for API responses
-- [Phase 04-01]: Split ListURLs into two queries (ListURLs DESC, ListURLsAsc ASC) for sqlc limitation
-- [Phase 04-01]: 5-second timeout for Analytics Service invocation with fallback to 0 clicks
-- [Phase 04-01]: Fire-and-forget link.deleted event publishing (deletion success independent of event)
-- [Phase 04-01]: Idempotent delete always returns 204 even if link doesn't exist
-- [Phase 04-01]: End-of-day adjustment for created_before filter (+23:59:59 for user-friendly UX)
-- [Phase 04-02]: Idempotent delete handler always returns 200, even if short code doesn't exist
-- [Phase 04-02]: Malformed link-deleted events acknowledged with 200 to prevent infinite retries
-- [Phase 04-02]: Cascade deletion pattern via asynchronous pub/sub for cross-service data cleanup
-- [Phase 05-01]: DaprClient wrapper interface for testability (avoids mocking private Dapr types)
-- [Phase 05-01]: Mocks in testutil/mocks not usecase/mocks to avoid import cycles
-- [Phase 05-01]: Scenario-based test naming (TestX_Condition_ExpectedOutcome pattern)
-- [Phase 05-03]: Health checks bypass rate limiting on URL Service
-- [Phase 05-03]: Readiness checks verify DB connectivity and Dapr sidecar availability
-- [Phase 05-03]: Repository tests use in-memory SQLite with real migrations (75.5% and 90% coverage)
-- [Phase 05-03]: 2-second timeout for health check database pings
-- [Phase 05-04]: Multi-stage Dockerfiles with CGO_ENABLED=0 for pure Go builds
-- [Phase 05-04]: Distroless base images for minimal attack surface
-- [Phase 05-04]: Dapr sidecars use network_mode service pairing (not shared network)
-- [Phase 05-04]: GeoIP database mounted as volume, not baked into images
-- [Phase 05-04]: golangci-lint excludes sqlc-generated directories
-- [Phase 05-05]: CI triggers on PRs and pushes to main/master only (not all branches)
-- [Phase 05-05]: 80% total coverage threshold with overrides for generated/cmd code
-- [Phase 05-05]: Docker images built in CI but not pushed (no registry yet)
-- [Phase 06-02]: Integration tests use //go:build integration tag to prevent running in normal go test ./...
-- [Phase 06-02]: Docker Compose orchestration via os/exec for test environments (simpler than testcontainers compose)
-- [Phase 06-02]: Polling-based verification with 30s timeout for async event delivery in integration tests
-- [Phase 06-02]: Integration tests run as separate CI job after build (ubuntu-latest has Docker pre-installed)
+All v1.0 decisions documented in PROJECT.md Key Decisions table with outcomes.
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-**Phase 5 (Production Readiness):**
+**For next milestone:**
 - PostgreSQL migration strategy from SQLite needs planning
-- Sidecar resource limits must be configured from day one
+- Container registry for Docker image publishing
+- Production pub/sub backend (Redis/RabbitMQ) to replace in-memory
 
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed Phase 6 Plan 02 (Test Coverage Hardening) — Dapr sidecar integration tests
+Stopped at: Completed v1.0 milestone archival
 Resume file: None
 
 ---
