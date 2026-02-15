@@ -1,27 +1,29 @@
 root = true
 
 [*]
-charset = utf-8
 end_of_line = lf
-insert_final_newline = true
+charset = utf-8
 trim_trailing_whitespace = true
-
-[*.go]
 indent_style = space
 indent_size = 2
 
-[*.{yaml,yml,json,toml}]
-indent_style = space
-indent_size = 2
+[{Makefile,*.go,.gitmodules}]
+indent_style = tab
+indent_size = 4
+
+[go.{mod,work,work.sum,sum}]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
 
 [*.md]
+indent_size = 4
 trim_trailing_whitespace = false
 
-[Makefile]
-indent_style = space
+eclint_indent_style = unset
 
-[go.mod]
-indent_style = space
-
-[go.sum]
-indent_style = space
+[Dockerfile]
+indent_size = 4

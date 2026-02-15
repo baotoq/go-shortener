@@ -5,9 +5,12 @@ package links
 
 import (
 	"context"
+	"errors"
 
+	"go-shortener/pkg/problemdetails"
 	"go-shortener/services/url-api/internal/svc"
 	"go-shortener/services/url-api/internal/types"
+	"go-shortener/services/url-api/model"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -30,12 +33,21 @@ func NewGetLinkDetailLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Get
 func (l *GetLinkDetailLogic) GetLinkDetail(req *types.LinkDetailRequest) (resp *types.LinkDetailResponse, err error) {
 	logx.WithContext(l.ctx).Infow("get link detail", logx.Field("code", req.Code))
 
-	// Phase 7 stub: Return mock link detail
-	// Phase 8 adds: Database lookup by code
+	url, findErr := l.svcCtx.UrlModel.FindOneByShortCode(l.ctx, req.Code)
+	if findErr != nil {
+		if errors.Is(findErr, model.ErrNotFound) {
+			return nil, problemdetails.New(404, problemdetails.TypeNotFound, "Not Found",
+				"short code '"+req.Code+"' not found")
+		}
+		logx.WithContext(l.ctx).Errorw("failed to find URL", logx.Field("error", findErr.Error()))
+		return nil, problemdetails.New(500, problemdetails.TypeInternalError, "Internal Error",
+			"failed to look up link detail")
+	}
+
 	return &types.LinkDetailResponse{
-		ShortCode:   req.Code,
-		OriginalUrl: "https://example.com/stub",
-		CreatedAt:   1700000000,
-		TotalClicks: 42,
+		ShortCode:   url.ShortCode,
+		OriginalUrl: url.OriginalUrl,
+		CreatedAt:   url.CreatedAt.Unix(),
+		TotalClicks: url.ClickCount,
 	}, nil
 }

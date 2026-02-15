@@ -5,7 +5,9 @@ package links
 
 import (
 	"context"
+	"math"
 
+	"go-shortener/pkg/problemdetails"
 	"go-shortener/services/url-api/internal/svc"
 	"go-shortener/services/url-api/internal/types"
 
@@ -33,16 +35,31 @@ func (l *ListLinksLogic) ListLinks(req *types.LinkListRequest) (resp *types.Link
 		logx.Field("per_page", req.PerPage),
 	)
 
-	// Phase 7 stub: Return mock paginated data
-	// Phase 8 adds: Database pagination, sorting, searching
+	urls, totalCount, queryErr := l.svcCtx.UrlModel.ListWithPagination(
+		l.ctx, req.Page, req.PerPage, req.Search, req.Sort, req.Order,
+	)
+	if queryErr != nil {
+		logx.WithContext(l.ctx).Errorw("failed to list URLs", logx.Field("error", queryErr.Error()))
+		return nil, problemdetails.New(500, problemdetails.TypeInternalError, "Internal Error", "failed to list links")
+	}
+
+	// Map model results to response types
+	linkItems := make([]types.LinkItem, 0, len(urls))
+	for _, u := range urls {
+		linkItems = append(linkItems, types.LinkItem{
+			ShortCode:   u.ShortCode,
+			OriginalUrl: u.OriginalUrl,
+			CreatedAt:   u.CreatedAt.Unix(),
+		})
+	}
+
+	totalPages := int(math.Ceil(float64(totalCount) / float64(req.PerPage)))
+
 	return &types.LinkListResponse{
-		Links: []types.LinkItem{
-			{ShortCode: "stub0001", OriginalUrl: "https://example.com", CreatedAt: 1700000000},
-			{ShortCode: "stub0002", OriginalUrl: "https://go-zero.dev", CreatedAt: 1700000001},
-		},
+		Links:      linkItems,
 		Page:       req.Page,
 		PerPage:    req.PerPage,
-		TotalPages: 1,
-		TotalCount: 2,
+		TotalPages: totalPages,
+		TotalCount: totalCount,
 	}, nil
 }

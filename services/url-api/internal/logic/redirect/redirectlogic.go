@@ -4,35 +4,57 @@
 package redirect
 
 import (
-	"context"
-	"fmt"
+  "context"
+  "errors"
 
-	"go-shortener/services/url-api/internal/svc"
-	"go-shortener/services/url-api/internal/types"
+  "go-shortener/pkg/problemdetails"
+  "go-shortener/services/url-api/internal/svc"
+  "go-shortener/services/url-api/internal/types"
+  "go-shortener/services/url-api/model"
 
-	"github.com/zeromicro/go-zero/core/logx"
+  "github.com/zeromicro/go-zero/core/logx"
 )
 
 type RedirectLogic struct {
-	logx.Logger
-	ctx    context.Context
-	svcCtx *svc.ServiceContext
+  logx.Logger
+  ctx    context.Context
+  svcCtx *svc.ServiceContext
 }
 
 // Redirect to original URL
 func NewRedirectLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RedirectLogic {
-	return &RedirectLogic{
-		Logger: logx.WithContext(ctx),
-		ctx:    ctx,
-		svcCtx: svcCtx,
-	}
+  return &RedirectLogic{
+    Logger: logx.WithContext(ctx),
+    ctx:    ctx,
+    svcCtx: svcCtx,
+  }
 }
 
-func (l *RedirectLogic) Redirect(req *types.RedirectRequest) error {
-	logx.WithContext(l.ctx).Infow("redirect", logx.Field("code", req.Code))
+// Redirect looks up the original URL by short code and returns it for HTTP redirect.
+// Also increments click count asynchronously (fire-and-forget).
+func (l *RedirectLogic) Redirect(req *types.RedirectRequest) (string, error) {
+  logx.WithContext(l.ctx).Infow("redirect", logx.Field("code", req.Code))
 
-	// Phase 7 stub: Redirect requires database lookup (implemented in Phase 8)
-	// Return not-found error to prove routing and error handling work
-	// Phase 8 adds: DB lookup, click event publishing, actual HTTP redirect
-	return fmt.Errorf("short code '%s' not found (stub - DB not connected)", req.Code)
+  url, err := l.svcCtx.UrlModel.FindOneByShortCode(l.ctx, req.Code)
+  if err != nil {
+    if errors.Is(err, model.ErrNotFound) {
+      return "", problemdetails.New(404, problemdetails.TypeNotFound, "Not Found",
+        "short code '"+req.Code+"' not found")
+    }
+    logx.WithContext(l.ctx).Errorw("failed to find URL", logx.Field("error", err.Error()))
+    return "", problemdetails.New(500, problemdetails.TypeInternalError, "Internal Error",
+      "failed to look up short code")
+  }
+
+  // Increment click count asynchronously (fire-and-forget)
+  go func() {
+    if incErr := l.svcCtx.UrlModel.IncrementClickCount(context.Background(), req.Code); incErr != nil {
+      logx.Errorw("failed to increment click count",
+        logx.Field("code", req.Code),
+        logx.Field("error", incErr.Error()),
+      )
+    }
+  }()
+
+  return url.OriginalUrl, nil
 }

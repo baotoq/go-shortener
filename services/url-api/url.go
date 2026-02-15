@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -34,16 +35,22 @@ func main() {
 	handler.RegisterHandlers(server, ctx)
 
 	// Custom RFC 7807 error handler
+	// Note: go-zero's doHandleError checks if the returned body implements error,
+	// and if so writes it as plaintext. We return a problemDetailsBody (non-error)
+	// struct to ensure JSON serialization.
 	httpx.SetErrorHandlerCtx(func(ctx context.Context, err error) (int, interface{}) {
-		// For Phase 7, return validation errors in Problem Details format
-		// Phase 8 will add more sophisticated error parsing and domain error handling
+		var pd *problemdetails.ProblemDetail
+		if errors.As(err, &pd) {
+			return pd.Status, pd.Body()
+		}
+
 		problem := problemdetails.New(
 			http.StatusBadRequest,
 			problemdetails.TypeValidationError,
 			"Bad Request",
 			err.Error(),
 		)
-		return problem.Status, problem
+		return problem.Status, problem.Body()
 	})
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)

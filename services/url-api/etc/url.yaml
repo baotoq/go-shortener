@@ -10,3 +10,5 @@ Log:
   Level: info
 
 BaseUrl: http://localhost:8080
+
+DataSource: postgres://postgres:postgres@localhost:5433/shortener?sslmode=disable
