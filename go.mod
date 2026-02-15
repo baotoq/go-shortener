@@ -7,6 +7,8 @@ require (
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/matoous/go-nanoid/v2 v2.1.0
+	github.com/mileusna/useragent v1.3.5
+	github.com/oschwald/geoip2-golang v1.13.0
 	go.uber.org/zap v1.27.1
 	golang.org/x/time v0.14.0
 	modernc.org/sqlite v1.45.0
@@ -23,6 +25,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
+	github.com/oschwald/maxminddb-golang v1.13.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel v1.37.0 // indirect
