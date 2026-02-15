@@ -14,7 +14,6 @@ import (
 	"go-shortener/internal/urlservice/domain"
 	"go-shortener/internal/urlservice/usecase"
 	"go-shortener/pkg/problemdetails"
-	dapr "github.com/dapr/go-sdk/client"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
@@ -23,13 +22,13 @@ import (
 type Handler struct {
 	service    *usecase.URLService
 	baseURL    string
-	daprClient dapr.Client  // may be nil if Dapr unavailable
+	daprClient usecase.DaprClient  // may be nil if Dapr unavailable
 	logger     *zap.Logger
 	db         *sql.DB
 }
 
 // NewHandler creates a new Handler
-func NewHandler(service *usecase.URLService, baseURL string, daprClient dapr.Client, logger *zap.Logger, db *sql.DB) *Handler {
+func NewHandler(service *usecase.URLService, baseURL string, daprClient usecase.DaprClient, logger *zap.Logger, db *sql.DB) *Handler {
 	return &Handler{
 		service:    service,
 		baseURL:    baseURL,
