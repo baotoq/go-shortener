@@ -91,7 +91,7 @@ func main() {
 	}
 
 	service := usecase.NewAnalyticsService(repo, geoIP, deviceDetector, refererClassifier)
-	handler := analyticshttp.NewHandler(service, logger)
+	handler := analyticshttp.NewHandler(service, logger, db)
 	router := analyticshttp.NewRouter(handler, logger)
 
 	// Create HTTP server

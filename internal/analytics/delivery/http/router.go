@@ -17,6 +17,10 @@ func NewRouter(handler *Handler, logger *zap.Logger) http.Handler {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 
+	// Health checks
+	r.Get("/healthz", handler.Healthz)
+	r.Get("/readyz", handler.Readyz)
+
 	// Dapr subscription endpoint — tells Dapr what topics to subscribe to
 	r.Get("/dapr/subscribe", func(w http.ResponseWriter, r *http.Request) {
 		subscriptions := []map[string]string{

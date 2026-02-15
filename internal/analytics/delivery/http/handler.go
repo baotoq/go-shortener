@@ -1,6 +1,8 @@
 package http
 
 import (
+	"context"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"math"
@@ -19,12 +21,14 @@ import (
 type Handler struct {
 	analyticsService *usecase.AnalyticsService
 	logger           *zap.Logger
+	db               *sql.DB
 }
 
-func NewHandler(analyticsService *usecase.AnalyticsService, logger *zap.Logger) *Handler {
+func NewHandler(analyticsService *usecase.AnalyticsService, logger *zap.Logger, db *sql.DB) *Handler {
 	return &Handler{
 		analyticsService: analyticsService,
 		logger:           logger,
+		db:               db,
 	}
 }
 
@@ -322,4 +326,35 @@ func convertToClickDetailsResponse(details *usecase.PaginatedClicks) *PaginatedC
 		NextCursor: details.NextCursor,
 		HasMore:    details.HasMore,
 	}
+}
+
+// HealthResponse represents health check response
+type HealthResponse struct {
+	Status string `json:"status"`
+	Reason string `json:"reason,omitempty"`
+}
+
+// Healthz handles GET /healthz (liveness probe)
+func (h *Handler) Healthz(w http.ResponseWriter, r *http.Request) {
+	resp := HealthResponse{Status: "ok"}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+// Readyz handles GET /readyz (readiness probe)
+func (h *Handler) Readyz(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+
+	// Check database connectivity
+	if err := h.db.PingContext(ctx); err != nil {
+		resp := HealthResponse{
+			Status: "unavailable",
+			Reason: "database unavailable: " + err.Error(),
+		}
+		writeJSON(w, http.StatusServiceUnavailable, resp)
+		return
+	}
+
+	resp := HealthResponse{Status: "ready"}
+	writeJSON(w, http.StatusOK, resp)
 }

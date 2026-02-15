@@ -12,26 +12,34 @@ import (
 func NewRouter(handler *Handler, logger *zap.Logger, rateLimiter *RateLimiter) http.Handler {
 	r := chi.NewRouter()
 
-	// Global middleware chain
+	// Global middleware chain (excluding rate limiter)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(LoggerMiddleware(logger))
 	r.Use(middleware.Recoverer)
-	r.Use(rateLimiter.Middleware)
 
-	// Root-level redirect route
-	r.Get("/{code}", handler.Redirect)
+	// Health checks (no rate limiting)
+	r.Get("/healthz", handler.Healthz)
+	r.Get("/readyz", handler.Readyz)
 
-	// API v1 routes
-	r.Route("/api/v1", func(r chi.Router) {
-		// URL shortening routes
-		r.Post("/urls", handler.CreateShortURL)
-		r.Get("/urls/{code}", handler.GetURLDetails)
+	// Business routes (rate limited)
+	r.Group(func(r chi.Router) {
+		r.Use(rateLimiter.Middleware)
 
-		// Link management routes
-		r.Get("/links", handler.ListLinks)
-		r.Get("/links/{code}", handler.GetLinkDetail)
-		r.Delete("/links/{code}", handler.DeleteLink)
+		// Root-level redirect route
+		r.Get("/{code}", handler.Redirect)
+
+		// API v1 routes
+		r.Route("/api/v1", func(r chi.Router) {
+			// URL shortening routes
+			r.Post("/urls", handler.CreateShortURL)
+			r.Get("/urls/{code}", handler.GetURLDetails)
+
+			// Link management routes
+			r.Get("/links", handler.ListLinks)
+			r.Get("/links/{code}", handler.GetLinkDetail)
+			r.Delete("/links/{code}", handler.DeleteLink)
+		})
 	})
 
 	return r

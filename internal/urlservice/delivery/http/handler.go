@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,15 +25,17 @@ type Handler struct {
 	baseURL    string
 	daprClient dapr.Client  // may be nil if Dapr unavailable
 	logger     *zap.Logger
+	db         *sql.DB
 }
 
 // NewHandler creates a new Handler
-func NewHandler(service *usecase.URLService, baseURL string, daprClient dapr.Client, logger *zap.Logger) *Handler {
+func NewHandler(service *usecase.URLService, baseURL string, daprClient dapr.Client, logger *zap.Logger, db *sql.DB) *Handler {
 	return &Handler{
 		service:    service,
 		baseURL:    baseURL,
 		daprClient: daprClient,
 		logger:     logger,
+		db:         db,
 	}
 }
 
@@ -362,4 +365,69 @@ func (h *Handler) publishClickEvent(shortCode, clientIP, userAgent, referer stri
 		)
 		// Click is lost, redirect already succeeded — per user decision
 	}
+}
+
+// HealthResponse represents health check response
+type HealthResponse struct {
+	Status string `json:"status"`
+	Reason string `json:"reason,omitempty"`
+}
+
+// Healthz handles GET /healthz (liveness probe)
+func (h *Handler) Healthz(w http.ResponseWriter, r *http.Request) {
+	resp := HealthResponse{Status: "ok"}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+// Readyz handles GET /readyz (readiness probe)
+func (h *Handler) Readyz(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+
+	// Check database connectivity
+	if err := h.db.PingContext(ctx); err != nil {
+		resp := HealthResponse{
+			Status: "unavailable",
+			Reason: "database unavailable: " + err.Error(),
+		}
+		writeJSON(w, http.StatusServiceUnavailable, resp)
+		return
+	}
+
+	// Check Dapr sidecar if client exists
+	if h.daprClient != nil {
+		httpClient := &http.Client{Timeout: 2 * time.Second}
+		req, err := http.NewRequestWithContext(ctx, "GET", "http://localhost:3500/v1.0/healthz", nil)
+		if err != nil {
+			resp := HealthResponse{
+				Status: "unavailable",
+				Reason: "dapr health check failed: " + err.Error(),
+			}
+			writeJSON(w, http.StatusServiceUnavailable, resp)
+			return
+		}
+
+		httpResp, err := httpClient.Do(req)
+		if err != nil {
+			resp := HealthResponse{
+				Status: "unavailable",
+				Reason: "dapr sidecar unavailable: " + err.Error(),
+			}
+			writeJSON(w, http.StatusServiceUnavailable, resp)
+			return
+		}
+		httpResp.Body.Close()
+
+		if httpResp.StatusCode != http.StatusOK {
+			resp := HealthResponse{
+				Status: "unavailable",
+				Reason: fmt.Sprintf("dapr sidecar unhealthy: status %d", httpResp.StatusCode),
+			}
+			writeJSON(w, http.StatusServiceUnavailable, resp)
+			return
+		}
+	}
+
+	resp := HealthResponse{Status: "ready"}
+	writeJSON(w, http.StatusOK, resp)
 }
