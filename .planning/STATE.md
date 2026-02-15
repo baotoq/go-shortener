@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-14)
 
 **Core value:** Shorten a long URL and reliably redirect anyone who visits the short link
-**Current focus:** Phase 4 - Link Management
+**Current focus:** Phase 5 - Production Readiness
 
 ## Current Position
 
-Phase: 4 of 5 (Link Management)
-Plan: 2 of 2 in current phase
-Status: Phase Complete
-Last activity: 2026-02-15 — Completed 04-02-PLAN.md: Link deletion cascade to Analytics Service
+Phase: 5 of 5 (Production Readiness)
+Plan: 3 of 5 in current phase
+Status: In Progress
+Last activity: 2026-02-15 — Completed 05-03-PLAN.md: Health checks and repository integration tests
 
-Progress: [███████░░░] 73.33%
+Progress: [████████░░] 80.00%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 2m 58s
-- Total execution time: 0.55 hours
+- Total plans completed: 12
+- Average duration: 3m 13s
+- Total execution time: 0.64 hours
 
 **By Phase:**
 
@@ -31,10 +31,11 @@ Progress: [███████░░░] 73.33%
 | 02-event-driven-analytics | 3 | 7m 50s | 2m 37s |
 | 03-enhanced-analytics | 3 | 8m 32s | 2m 51s |
 | 04-link-management | 2 | 8m 5s | 4m 3s |
+| 05-production-readiness | 3 | 17m 32s | 5m 51s |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (2m 30s), 03-03 (3m 11s), 04-01 (6m 2s), 04-02 (2m 3s)
-- Trend: Decrease (last plan significantly faster than previous)
+- Last 5 plans: 03-03 (3m 11s), 04-01 (6m 2s), 04-02 (2m 3s), 05-01 (6m 0s), 05-02 (5m 46s), 05-03 (5m 46s)
+- Trend: Stable (production readiness plans consistently ~6 minutes)
 
 *Updated after each plan completion*
 
@@ -85,6 +86,10 @@ Recent decisions affecting current work:
 - [Phase 04-02]: Idempotent delete handler always returns 200, even if short code doesn't exist
 - [Phase 04-02]: Malformed link-deleted events acknowledged with 200 to prevent infinite retries
 - [Phase 04-02]: Cascade deletion pattern via asynchronous pub/sub for cross-service data cleanup
+- [Phase 05-03]: Health checks bypass rate limiting on URL Service
+- [Phase 05-03]: Readiness checks verify DB connectivity and Dapr sidecar availability
+- [Phase 05-03]: Repository tests use in-memory SQLite with real migrations (75.5% and 90% coverage)
+- [Phase 05-03]: 2-second timeout for health check database pings
 
 ### Pending Todos
 
@@ -99,7 +104,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 04-02-PLAN.md: Link deletion cascade to Analytics Service (Phase 04 complete - 2 of 2 plans)
+Stopped at: Completed 05-03-PLAN.md: Health checks and repository integration tests
 Resume file: None
 
 ---
