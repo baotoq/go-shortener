@@ -38,9 +38,9 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 **Plans**: 3 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — Clean v1.0 code, install go-zero, create project scaffold
-- [ ] 07-02-PLAN.md — URL API service (.api spec, code gen, error handler, stub logic)
-- [ ] 07-03-PLAN.md — Analytics RPC service (.proto spec, zRPC gen, stub logic)
+- [x] 07-01-PLAN.md — Clean v1.0 code, install go-zero, create project scaffold
+- [x] 07-02-PLAN.md — URL API service (.api spec, code gen, error handler, stub logic)
+- [x] 07-03-PLAN.md — Analytics RPC service (.proto spec, zRPC gen, stub logic)
 
 #### Phase 8: Database Migration
 **Goal**: Migrate from SQLite to PostgreSQL with goctl-generated models
@@ -103,11 +103,11 @@ Phases execute in numeric order: 7 → 8 → 9 → 10
 | 4. Link Management | v1.0 | 2/2 | ✓ Complete | 2026-02-15 |
 | 5. Production Readiness | v1.0 | 5/5 | ✓ Complete | 2026-02-15 |
 | 6. Test Coverage Hardening | v1.0 | 2/2 | ✓ Complete | 2026-02-15 |
-| 7. Framework Foundation | v2.0 | 0/3 | Not started | - |
+| 7. Framework Foundation | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 8. Database Migration | v2.0 | 0/TBD | Not started | - |
 | 9. Messaging Migration | v2.0 | 0/TBD | Not started | - |
 | 10. Resilience & Infrastructure | v2.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-14*
-*Last updated: 2026-02-16 after Phase 7 planning*
+*Last updated: 2026-02-16 after Phase 7 execution complete*
