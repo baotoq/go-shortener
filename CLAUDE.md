@@ -1,61 +1,60 @@
 # Go Shortener
 
-URL shortener microservices project using Go, Dapr, and SQLite.
+URL shortener microservices project using Go and go-zero framework.
 
 ## Commands
 
 ```bash
-make run-all          # Run both services with Dapr sidecars
-make run-url          # URL Service only (port 8080)
-make run-analytics    # Analytics Service only (port 8081)
-make build            # Build binaries to bin/
-sqlc generate         # Regenerate type-safe SQL code after schema changes
+goctl api go -api services/url-api/url.api -dir services/url-api -style gozero   # Regenerate URL service
+goctl rpc protoc services/analytics-rpc/analytics.proto --go_out=services/analytics-rpc --go-grpc_out=services/analytics-rpc --zrpc_out=services/analytics-rpc --style gozero  # Regenerate Analytics service
 ```
 
 ## Architecture
 
-Two microservices communicating via Dapr pub/sub (in-memory for dev):
+Two microservices using go-zero framework:
 
-- **url-service** (port 8080): URL shortening + redirect. Publishes click events.
-- **analytics-service** (port 8081): Subscribes to click events, enriches with GeoIP/UA/Referer.
+- **url-api** (services/url-api): URL shortening API. go-zero REST service with .api spec code generation.
+- **analytics-rpc** (services/analytics-rpc): Analytics zRPC service. Protobuf-generated gRPC server.
 
-Each service follows Clean Architecture: `delivery/http` → `usecase` → `repository/sqlite`
-Repository interfaces defined in usecase package (dependency inversion).
+Each service follows go-zero convention: Handler → Logic → ServiceContext
+Generated code from .api/.proto specs. Business logic in logic/ only.
 
 ```
-internal/{service}/
-├── delivery/http/    # Handlers, router, middleware
-├── domain/           # Entities, domain errors
-├── usecase/          # Business logic + repository interfaces
-├── repository/sqlite/# sqlc-generated data access
-└── database/         # Connection + embedded migrations
+services/{service}/
+├── {service}.api or .proto  # Spec file (source of truth)
+├── {service}.go             # Main entry point
+├── etc/
+│   └── {service}.yaml       # Configuration
+└── internal/
+    ├── config/              # Config struct
+    ├── handler/             # HTTP handlers (generated)
+    ├── logic/               # Business logic (manual)
+    ├── svc/                 # ServiceContext (DI)
+    └── types/               # Request/response types (generated)
 ```
 
 ## Key Patterns
 
-- **sqlc code generation**: SQL in `db/*.sql` → generated Go in `repository/sqlite/`
-- **Embedded migrations**: Schema files embedded in binaries via `//go:embed`
-- **RFC 7807 Problem Details**: All API errors use `pkg/problemdetails/`
-- **Fire-and-forget events**: Click events published in goroutine after redirect response
-- **Dapr nil-safety**: Services gracefully degrade if Dapr sidecar unavailable
-- **Shared events**: `internal/shared/events/` defines cross-service event types
+- **goctl code generation**: .api/.proto specs generate handlers, types, routes. Never edit generated types.go.
+- **Handler/Logic separation**: Handlers parse requests. Logic contains business rules. Never mix.
+- **ServiceContext**: Dependency injection container. Initialized once, passed to all logic constructors.
+- **RFC 7807 Problem Details**: Custom httpx.SetErrorHandler maps errors to Problem Details format.
+- **Validation via tags**: .api type tags (range, options, optional, default) handle all request validation.
+- **logx structured logging**: go-zero's built-in logger with context propagation.
 
 ## Gotchas
 
-- SQLite uses `SetMaxOpenConns(1)` — single writer, cannot scale horizontally
-- Dapr pub/sub subscriber returns 200 even on processing errors (prevents retry storm)
 - Short codes: NanoID 8-char with collision retry (max 5 attempts)
 - Rate limiter is in-memory per-instance, resets on restart
 - GeoIP database (`data/GeoLite2-Country.mmdb`) is optional — falls back to "Unknown"
-- CloudEvents: Dapr wraps events, handler must extract `data` field before unmarshaling
 - Indentation: project uses 2 spaces for Go (see .editorconfig), not standard tabs
 
 ## Environment Variables
 
 All have defaults suitable for local dev (no .env needed):
-- `PORT` (8080/8081), `DATABASE_PATH`, `BASE_URL`, `RATE_LIMIT`, `GEOIP_DB_PATH`
+- `PORT` (8080/8081), `DATABASE_URL`, `BASE_URL`, `RATE_LIMIT`, `GEOIP_DB_PATH`, `KAFKA_BROKERS`
 
 ## Project Status
 
-See `.planning/ROADMAP.md` for full plan. Phase 4 (Link Management) in progress.
+See `.planning/ROADMAP.md` for full plan. Phase 7 (Framework Foundation) in progress.
 `.planning/STATE.md` tracks real-time progress and decisions.
