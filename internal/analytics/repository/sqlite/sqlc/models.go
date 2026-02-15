@@ -5,7 +5,10 @@
 package sqlc
 
 type Click struct {
-	ID        int64  `json:"id"`
-	ShortCode string `json:"short_code"`
-	ClickedAt int64  `json:"clicked_at"`
+	ID            int64  `json:"id"`
+	ShortCode     string `json:"short_code"`
+	ClickedAt     int64  `json:"clicked_at"`
+	CountryCode   string `json:"country_code"`
+	DeviceType    string `json:"device_type"`
+	TrafficSource string `json:"traffic_source"`
 }

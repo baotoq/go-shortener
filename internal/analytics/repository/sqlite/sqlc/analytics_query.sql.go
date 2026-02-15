@@ -9,6 +9,126 @@ import (
 	"context"
 )
 
+const countByCountryInRange = `-- name: CountByCountryInRange :many
+SELECT country_code, COUNT(*) as count FROM clicks
+WHERE short_code = ? AND clicked_at >= ? AND clicked_at <= ?
+GROUP BY country_code ORDER BY count DESC
+`
+
+type CountByCountryInRangeParams struct {
+	ShortCode   string `json:"short_code"`
+	ClickedAt   int64  `json:"clicked_at"`
+	ClickedAt_2 int64  `json:"clicked_at_2"`
+}
+
+type CountByCountryInRangeRow struct {
+	CountryCode string `json:"country_code"`
+	Count       int64  `json:"count"`
+}
+
+func (q *Queries) CountByCountryInRange(ctx context.Context, arg CountByCountryInRangeParams) ([]CountByCountryInRangeRow, error) {
+	rows, err := q.db.QueryContext(ctx, countByCountryInRange, arg.ShortCode, arg.ClickedAt, arg.ClickedAt_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CountByCountryInRangeRow
+	for rows.Next() {
+		var i CountByCountryInRangeRow
+		if err := rows.Scan(&i.CountryCode, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const countByDeviceInRange = `-- name: CountByDeviceInRange :many
+SELECT device_type, COUNT(*) as count FROM clicks
+WHERE short_code = ? AND clicked_at >= ? AND clicked_at <= ?
+GROUP BY device_type ORDER BY count DESC
+`
+
+type CountByDeviceInRangeParams struct {
+	ShortCode   string `json:"short_code"`
+	ClickedAt   int64  `json:"clicked_at"`
+	ClickedAt_2 int64  `json:"clicked_at_2"`
+}
+
+type CountByDeviceInRangeRow struct {
+	DeviceType string `json:"device_type"`
+	Count      int64  `json:"count"`
+}
+
+func (q *Queries) CountByDeviceInRange(ctx context.Context, arg CountByDeviceInRangeParams) ([]CountByDeviceInRangeRow, error) {
+	rows, err := q.db.QueryContext(ctx, countByDeviceInRange, arg.ShortCode, arg.ClickedAt, arg.ClickedAt_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CountByDeviceInRangeRow
+	for rows.Next() {
+		var i CountByDeviceInRangeRow
+		if err := rows.Scan(&i.DeviceType, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const countBySourceInRange = `-- name: CountBySourceInRange :many
+SELECT traffic_source, COUNT(*) as count FROM clicks
+WHERE short_code = ? AND clicked_at >= ? AND clicked_at <= ?
+GROUP BY traffic_source ORDER BY count DESC
+`
+
+type CountBySourceInRangeParams struct {
+	ShortCode   string `json:"short_code"`
+	ClickedAt   int64  `json:"clicked_at"`
+	ClickedAt_2 int64  `json:"clicked_at_2"`
+}
+
+type CountBySourceInRangeRow struct {
+	TrafficSource string `json:"traffic_source"`
+	Count         int64  `json:"count"`
+}
+
+func (q *Queries) CountBySourceInRange(ctx context.Context, arg CountBySourceInRangeParams) ([]CountBySourceInRangeRow, error) {
+	rows, err := q.db.QueryContext(ctx, countBySourceInRange, arg.ShortCode, arg.ClickedAt, arg.ClickedAt_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CountBySourceInRangeRow
+	for rows.Next() {
+		var i CountBySourceInRangeRow
+		if err := rows.Scan(&i.TrafficSource, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countClicksByShortCode = `-- name: CountClicksByShortCode :one
 SELECT COUNT(*) as total_clicks FROM clicks WHERE short_code = ?
 `
@@ -20,17 +140,88 @@ func (q *Queries) CountClicksByShortCode(ctx context.Context, shortCode string) 
 	return total_clicks, err
 }
 
-const insertClick = `-- name: InsertClick :exec
-INSERT INTO clicks (short_code, clicked_at)
-VALUES (?, ?)
+const countClicksInRange = `-- name: CountClicksInRange :one
+SELECT COUNT(*) as total FROM clicks
+WHERE short_code = ? AND clicked_at >= ? AND clicked_at <= ?
 `
 
-type InsertClickParams struct {
-	ShortCode string `json:"short_code"`
-	ClickedAt int64  `json:"clicked_at"`
+type CountClicksInRangeParams struct {
+	ShortCode   string `json:"short_code"`
+	ClickedAt   int64  `json:"clicked_at"`
+	ClickedAt_2 int64  `json:"clicked_at_2"`
 }
 
-func (q *Queries) InsertClick(ctx context.Context, arg InsertClickParams) error {
-	_, err := q.db.ExecContext(ctx, insertClick, arg.ShortCode, arg.ClickedAt)
+func (q *Queries) CountClicksInRange(ctx context.Context, arg CountClicksInRangeParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countClicksInRange, arg.ShortCode, arg.ClickedAt, arg.ClickedAt_2)
+	var total int64
+	err := row.Scan(&total)
+	return total, err
+}
+
+const getClickDetails = `-- name: GetClickDetails :many
+SELECT id, short_code, clicked_at, country_code, device_type, traffic_source
+FROM clicks
+WHERE short_code = ? AND clicked_at < ?
+ORDER BY clicked_at DESC
+LIMIT ?
+`
+
+type GetClickDetailsParams struct {
+	ShortCode string `json:"short_code"`
+	ClickedAt int64  `json:"clicked_at"`
+	Limit     int64  `json:"limit"`
+}
+
+func (q *Queries) GetClickDetails(ctx context.Context, arg GetClickDetailsParams) ([]Click, error) {
+	rows, err := q.db.QueryContext(ctx, getClickDetails, arg.ShortCode, arg.ClickedAt, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Click
+	for rows.Next() {
+		var i Click
+		if err := rows.Scan(
+			&i.ID,
+			&i.ShortCode,
+			&i.ClickedAt,
+			&i.CountryCode,
+			&i.DeviceType,
+			&i.TrafficSource,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const insertEnrichedClick = `-- name: InsertEnrichedClick :exec
+INSERT INTO clicks (short_code, clicked_at, country_code, device_type, traffic_source)
+VALUES (?, ?, ?, ?, ?)
+`
+
+type InsertEnrichedClickParams struct {
+	ShortCode     string `json:"short_code"`
+	ClickedAt     int64  `json:"clicked_at"`
+	CountryCode   string `json:"country_code"`
+	DeviceType    string `json:"device_type"`
+	TrafficSource string `json:"traffic_source"`
+}
+
+func (q *Queries) InsertEnrichedClick(ctx context.Context, arg InsertEnrichedClickParams) error {
+	_, err := q.db.ExecContext(ctx, insertEnrichedClick,
+		arg.ShortCode,
+		arg.ClickedAt,
+		arg.CountryCode,
+		arg.DeviceType,
+		arg.TrafficSource,
+	)
 	return err
 }

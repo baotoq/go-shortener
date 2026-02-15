@@ -9,8 +9,13 @@ import (
 )
 
 type Querier interface {
+	CountByCountryInRange(ctx context.Context, arg CountByCountryInRangeParams) ([]CountByCountryInRangeRow, error)
+	CountByDeviceInRange(ctx context.Context, arg CountByDeviceInRangeParams) ([]CountByDeviceInRangeRow, error)
+	CountBySourceInRange(ctx context.Context, arg CountBySourceInRangeParams) ([]CountBySourceInRangeRow, error)
 	CountClicksByShortCode(ctx context.Context, shortCode string) (int64, error)
-	InsertClick(ctx context.Context, arg InsertClickParams) error
+	CountClicksInRange(ctx context.Context, arg CountClicksInRangeParams) (int64, error)
+	GetClickDetails(ctx context.Context, arg GetClickDetailsParams) ([]Click, error)
+	InsertEnrichedClick(ctx context.Context, arg InsertEnrichedClickParams) error
 }
 
 var _ Querier = (*Queries)(nil)
