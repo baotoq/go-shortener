@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"time"
 
@@ -148,13 +149,21 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Extract enrichment data BEFORE redirect (r may not be available in goroutine)
+	clientIP := r.RemoteAddr
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		clientIP = host
+	}
+	userAgent := r.Header.Get("User-Agent")
+	referer := r.Header.Get("Referer")
+
 	// Send redirect response FIRST
 	http.Redirect(w, r, url.OriginalURL, http.StatusFound)
 
 	// Fire-and-forget: publish click event after redirect
 	// Per user decision: on failure, log error and continue
 	if h.daprClient != nil {
-		go h.publishClickEvent(code)
+		go h.publishClickEvent(code, clientIP, userAgent, referer)
 	}
 }
 
@@ -201,10 +210,13 @@ const (
 	topicName  = "clicks"
 )
 
-func (h *Handler) publishClickEvent(shortCode string) {
+func (h *Handler) publishClickEvent(shortCode, clientIP, userAgent, referer string) {
 	event := events.ClickEvent{
 		ShortCode: shortCode,
 		Timestamp: time.Now().UTC(),
+		ClientIP:  clientIP,
+		UserAgent: userAgent,
+		Referer:   referer,
 	}
 
 	data, err := json.Marshal(event)

@@ -7,4 +7,7 @@ import "time"
 type ClickEvent struct {
 	ShortCode string    `json:"short_code"`
 	Timestamp time.Time `json:"timestamp"`
+	ClientIP  string    `json:"client_ip"`
+	UserAgent string    `json:"user_agent"`
+	Referer   string    `json:"referer"`
 }
