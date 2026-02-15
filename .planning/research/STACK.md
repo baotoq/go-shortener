@@ -1,7 +1,7 @@
-# Stack Research
+# Stack Research: go-zero Adoption
 
-**Domain:** URL Shortener with Dapr Microservices
-**Researched:** 2026-02-14
+**Domain:** Go microservices framework migration (Chi/Dapr/SQLite to go-zero/zRPC/Kafka/PostgreSQL)
+**Researched:** 2026-02-15
 **Confidence:** HIGH
 
 ## Recommended Stack
@@ -10,258 +10,168 @@
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| Go | 1.26 | Primary programming language | Latest stable (Feb 2026). Clean concurrency model perfect for microservices. Strong stdlib reduces dependencies. |
-| Dapr Go SDK | v1.13.0 | Distributed application runtime | Official SDK for pub/sub and service invocation. Provides abstraction over infrastructure concerns. Latest stable release (Sept 2025). |
-| modernc.org/sqlite | latest | Database driver | Pure Go SQLite implementation (no CGO). Single binary deployment. Perfect for learning projects with production-quality code. |
-| Chi | v5.x | HTTP router | Lightweight, idiomatic, stdlib-compatible. Excellent middleware ecosystem. Preferred over stdlib ServeMux for microservices routing needs. |
+| go-zero | v1.10.0 | Microservices framework with code generation | Industry-standard Go microservices framework with built-in service governance (rate limiting, circuit breaker, load shedding), OpenTelemetry tracing, and Prometheus metrics. Replaces Chi router + custom middleware entirely. Latest stable release (Feb 15, 2025) adds Go 1.23 support and bug fixes. |
+| goctl | v1.10.0 | Code generation CLI | Generates handler/logic/model code from `.api` specs and zRPC services from `.proto` files. v1.10.0 adds enhanced Swagger support and improved Docker generation. Use same version as go-zero framework. |
+| PostgreSQL | 13+ | Primary database | Production-grade relational DB replaces SQLite. go-zero sqlx requires PostgreSQL 13+ for full feature support. |
+| jackc/pgx/v5 | v5.8.0 | PostgreSQL driver (stdlib compatibility) | Recommended PostgreSQL driver for Go. Use stdlib wrapper (`pgx/v5/stdlib`) for go-zero sqlx compatibility. Native pgx is 70-150x faster than database/sql wrappers but go-zero sqlx requires database/sql interface. v5.8.0 supports Go 1.24 and PostgreSQL 13+. |
+| go-queue | v1.2.2 | Kafka/Beanstalkd pub/sub framework | go-zero's official queue abstraction wrapping segmentio/kafka-go. Provides unified API for Kafka producers/consumers with built-in error handling and retry. Latest stable (July 24, 2024). |
+| segmentio/kafka-go | v0.4.50 | Kafka client library | Pure Go Kafka library with no C dependencies. Used by go-queue under the hood. v0.4.50 (Jan 15, 2025) adds DescribeGroups v5 API and Kafka 4.0 support. |
 
-### HTTP & Routing
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| go-chi/chi | v5.x | HTTP router and middleware framework | Primary router. Provides method-based routing, URL parameters, middleware composition. |
-| go-chi/chi/middleware | (included) | Standard middleware collection | RequestID, logging, recovery, real IP extraction. Battle-tested components. |
-| go-chi/cors | latest | CORS handling | If adding web frontend later. Not needed for API-only initially. |
-
-### Validation & Data Handling
+### Supporting Libraries
 
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| go-playground/validator/v10 | v10.x | Struct validation | Validate incoming requests. Tag-based validation reduces boilerplate. Use WithRequiredStructEnabled option for v11+ compatibility. |
-| google/uuid | latest | UUID generation | Generate short URL identifiers. RFC 9562 compliant. Version 4 (random) UUIDs recommended. |
-
-### Logging
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| log/slog | stdlib (Go 1.21+) | Structured logging | Default choice. Zero dependencies, part of stdlib, good performance. Use for all services. |
-| github.com/rs/zerolog | v1.x | High-performance JSON logging | Only if benchmarks show slog is bottleneck (unlikely for this project). Provides zero-allocation logging. |
-
-### Configuration
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| joho/godotenv | v1.x | .env file loading | Simple env var loading for local development. Load .env, access via os.Getenv(). |
-| spf13/viper | v1.x | Advanced configuration | If you need multiple config sources (YAML, JSON, env), remote config, or nested structures. Overkill for simple projects. |
-
-### Testing
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| stretchr/testify | v1.x | Test assertions and mocking | Standard testing toolkit. Use assert for tests, require for fatal checks, mock for interfaces. |
-| vektra/mockery | v2.x | Mock generator | Generate mocks from interfaces. Run mockery in CI. Integrates with testify/mock. |
-| golang.org/x/sync/errgroup | stdlib | Concurrent test utilities | Test concurrent operations cleanly. Not just for tests but useful there. |
+| google.golang.org/grpc | v1.78.0 | gRPC runtime | Required for zRPC. v1.78.0 (Feb 11, 2026) includes critical security enhancements (TLS, authentication). Automatically pulled by go-zero. |
+| google.golang.org/protobuf | v1.36+ | Protocol Buffers runtime | Required for `.proto` code generation. Use `protoc-gen-go@v1.28.0` and `protoc-gen-go-grpc@v1.3.0` for goctl compatibility. |
+| github.com/jaevor/go-nanoid | latest | Short code generation | Continue using existing NanoID library for 8-char short codes. go-zero doesn't provide ID generation. |
+| github.com/oschwald/geoip2-golang/v2 | v2.0+ | GeoIP country lookup | Continue using for analytics enrichment. v2.0 (56% fewer allocations, 34% less memory) now uses `netip.Addr` instead of `net.IP` for Go 1.24 alignment. |
 
 ### Development Tools
 
-| Tool | Version | Purpose | Notes |
-|------|---------|---------|-------|
-| golangci-lint | v2.9.0 | Linting aggregator | Latest (Feb 2026). Run multiple linters in one pass. Configure via .golangci.yml. Use in CI and pre-commit. |
-| go mod | stdlib | Dependency management | Use go.mod and go.sum. Run `go mod tidy` regularly. |
-| Docker | latest | Containerization | Multi-stage builds. Distroless base images for production. |
-| GitHub Actions | N/A | CI/CD | Go has excellent GitHub Actions support. Built-in caching, matrix testing. |
-
-### Container Base Images
-
-| Image | Size | Purpose | When to Use |
-|-------|------|---------|-------------|
-| golang:1.26 | ~800MB | Build stage | Multi-stage builds only. Contains full build toolchain. |
-| gcr.io/distroless/static-debian12 | ~2MB | Production runtime | Default choice. No shell, minimal attack surface. 50% smaller than Alpine. |
-| alpine:latest | ~5MB | Production runtime (alternative) | If you need shell for debugging. Still very small. Use golang:alpine for builds. |
-| scratch | 0MB | Production runtime (minimal) | Most extreme. Only works with fully static binaries (CGO_ENABLED=0). Harder to debug. |
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| goctl | Code generation from `.api` and `.proto` files | Install: `go install github.com/zeromicro/go-zero/tools/goctl@v1.10.0` |
+| protoc | Protocol Buffers compiler | Required for zRPC. Install via package manager or from protobuf releases. |
+| protoc-gen-go | Protobuf Go plugin | Install: `go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0` |
+| protoc-gen-go-grpc | gRPC Go plugin | Install: `go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0` |
+| Docker Compose | Local orchestration | PostgreSQL, Kafka, Zookeeper, URL Service, Analytics Service |
 
 ## Installation
 
 ```bash
-# Initialize Go module
-go mod init github.com/yourusername/go-shortener
+# Core framework and CLI
+go get github.com/zeromicro/go-zero@v1.10.0
+go install github.com/zeromicro/go-zero/tools/goctl@v1.10.0
 
-# Core dependencies
-go get github.com/dapr/go-sdk@v1.13.0
-go get modernc.org/sqlite
-go get github.com/go-chi/chi/v5
-go get github.com/go-playground/validator/v10
-go get github.com/google/uuid
-go get github.com/joho/godotenv
+# Kafka integration
+go get github.com/zeromicro/go-queue@v1.2.2
 
-# Testing dependencies
-go get github.com/stretchr/testify
-go get github.com/vektra/mockery/v2
+# PostgreSQL driver (stdlib wrapper for go-zero sqlx)
+go get github.com/jackc/pgx/v5@v5.8.0
 
-# Install dev tools
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.9.0
-go install github.com/vektra/mockery/v2@latest
+# zRPC/gRPC dependencies (auto-installed by go-zero, but pinned for consistency)
+go get google.golang.org/grpc@v1.78.0
+go get google.golang.org/protobuf@latest
+
+# Protobuf code generators
+go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
+
+# Existing libraries to KEEP
+go get github.com/jaevor/go-nanoid@latest
+go get github.com/oschwald/geoip2-golang/v2@latest
 ```
 
 ## Alternatives Considered
 
-| Category | Recommended | Alternative | Why Not Alternative |
-|----------|-------------|-------------|---------------------|
-| HTTP Router | Chi | stdlib http.ServeMux | ServeMux improved in Go 1.22 but Chi provides better middleware composition and URL params. |
-| HTTP Router | Chi | Gin | Gin is faster but less idiomatic. More opinionated with custom context. Chi is stdlib-compatible. |
-| Database Driver | modernc.org/sqlite | mattn/go-sqlite3 | mattn requires CGO, complicates cross-compilation. modernc is pure Go. |
-| Database Layer | database/sql | GORM | GORM adds overhead and reflection. Learning project benefits from understanding raw SQL. Use database/sql directly. |
-| Database Layer | database/sql | sqlx | sqlx is good middle ground but unnecessary for simple schema. Add if boilerplate becomes painful. |
-| Logging | slog (stdlib) | logrus | logrus requires external dependency. slog is stdlib since Go 1.21. |
-| Logging | slog | zap/zerolog | Higher performance but more complex. Premature optimization for this project. |
-| Config | godotenv | viper | Viper is feature-rich but overkill. Simple env vars sufficient. |
-| Validation | validator/v10 | Manual validation | validator reduces boilerplate, provides consistent error messages, industry standard. |
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| go-zero sqlx + goctl model | sqlc | Use sqlc if you need complex SQL queries with compile-time validation. go-zero sqlx generates basic CRUD + caching but doesn't validate SQL syntax at compile time. For this project, go-zero sqlx is sufficient (simple queries, framework integration). |
+| jackc/pgx/v5 (stdlib) | lib/pq | Never. lib/pq is deprecated and unmaintained. pgx is 70-150x faster and actively developed. |
+| go-queue (Kafka) | confluent-kafka-go | Use confluent-kafka-go if you need Confluent-specific features (Schema Registry, ksqlDB). go-queue is pure Go (no CGo), simpler, and integrates natively with go-zero. |
+| zRPC (gRPC) | Dapr service invocation | Use Dapr if multi-language polyglot services are required. For Go-only microservices, zRPC removes abstraction layer and provides better performance. |
+| PostgreSQL | SQLite | Use SQLite for single-writer, embedded scenarios. PostgreSQL removes single-writer limitation and provides production-grade features (replication, JSONB, full-text search). |
 
 ## What NOT to Use
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| mattn/go-sqlite3 | Requires CGO, complicates builds and cross-compilation | modernc.org/sqlite (pure Go) |
-| GORM for learning | Hides SQL complexity, uses reflection, harder to debug | database/sql with hand-written queries |
-| gorilla/mux | Archived/maintenance mode as of 2022 | Chi (active, similar API) |
-| Gin (for this project) | Custom context breaks stdlib compatibility, overkill for simple APIs | Chi with stdlib http.Handler |
-| Old validator versions | validator v9 and older deprecated | validator/v10 with WithRequiredStructEnabled |
-| Alpine without multi-stage | Large image with build tools | Multi-stage: golang:1.26 → distroless/static |
-| Self-hosted GitHub runners with public repos | Security risk (code execution in your infra) | GitHub-hosted runners |
+| Chi router | go-zero provides HTTP routing via `.api` specs | go-zero rest package with `.api` file definitions |
+| Dapr | Adds unnecessary abstraction layer when go-zero provides native zRPC + queue | go-zero zRPC for service calls, go-queue for events |
+| sqlc | Redundant when using go-zero sqlx model generation | goctl model for PostgreSQL code generation |
+| Custom middleware (rate limit, circuit breaker) | go-zero has built-in service governance | go-zero built-in features (configured via YAML) |
+| Zap logger | go-zero has built-in structured logging | go-zero logx package |
+| Manual Prometheus metrics | go-zero auto-exports metrics on port 6470 | go-zero built-in telemetry (custom metrics via core/metric) |
 
 ## Stack Patterns by Variant
 
-**For Learning/Development:**
-- Use godotenv for config
-- Use slog with text handler for readable logs
-- Use SQLite file (not :memory:) to inspect data
-- Build with `go build` directly
-- Run with `dapr run --app-id url-service -- go run ./cmd/url-service`
+**For HTTP API services (URL Service):**
+- Define routes in `.api` file with request/response types
+- Generate handler/logic/types with `goctl api go -api url.api -dir .`
+- Use go-zero sqlx models for database access
+- Enable built-in rate limiting, circuit breaker in service config YAML
+- Metrics auto-exported on `:6470/metrics`, health on `:6470/healthz`
 
-**For Production:**
-- Use environment variables directly (no .env file)
-- Use slog with JSON handler for structured logs
-- Use distroless containers
-- Build with `-ldflags="-w -s"` to strip debug info
-- Run in Kubernetes with Dapr sidecar
+**For RPC services (Analytics Service):**
+- Define service in `.proto` file with request/response messages
+- Generate zRPC server/client with `goctl rpc protoc analytics.proto --go_out=. --go-grpc_out=. --zrpc_out=.`
+- Consume Kafka events via go-queue `kq.MustNewQueue()`
+- Call other services via generated zRPC clients
 
-**For CI/CD:**
-- Cache Go modules (`~/.cache/go-build`, `~/go/pkg/mod`)
-- Run golangci-lint before tests
-- Generate mocks before running tests
-- Build for multiple platforms if needed (GOOS/GOARCH)
-- Use GitHub Actions caching (automatically handles Go)
+**For async event consumers:**
+- Use go-queue `kq.MustNewQueue()` with consumer struct implementing `Consume(key, val string) error`
+- Configure via `KqConf` (brokers, group, topic, offset, consumers, processors)
+- go-queue handles deserialization, error handling, and retries
+
+**For database access:**
+- Generate models from existing PostgreSQL database: `goctl model pg datasource -url="..." -table="..." -dir=./model`
+- Or define DDL and generate: Use MySQL DDL approach (PostgreSQL DDL generation not supported, requires live DB connection)
+- Models include CRUD operations, optional caching (Redis), and connection pooling
 
 ## Version Compatibility
 
 | Package | Compatible With | Notes |
 |---------|-----------------|-------|
-| Go 1.26 | Dapr SDK v1.13.0 | SDK supports Go 1.21+. Tested with 1.26. |
-| validator/v10 | Go 1.21+ | Requires generics support (Go 1.18+). |
-| Chi v5 | Go 1.16+ | Very stable. v5 is current major version. |
-| modernc.org/sqlite | Go 1.22+ | Requires newer stdlib features. |
-| golangci-lint v2.9.0 | Go 1.26 | v2 supports up to go1.26 as of Feb 2026. |
-| distroless/static | CGO_ENABLED=0 binaries | Must build fully static. Set in Dockerfile. |
+| go-zero@v1.10.0 | goctl@v1.10.0 | MUST match framework version |
+| goctl@v1.10.0 | protoc-gen-go@v1.28.0, protoc-gen-go-grpc@v1.3.0 | Recommended versions for zRPC generation |
+| go-queue@v1.2.2 | segmentio/kafka-go@v0.4.50 | go-queue wraps kafka-go, version mismatch unlikely to cause issues |
+| jackc/pgx/v5@v5.8.0 | PostgreSQL 13+ | Minimum PostgreSQL 13 for go-zero sqlx features |
+| google.golang.org/grpc@v1.78.0 | google.golang.org/protobuf@v1.36+ | Use matching major versions |
+| geoip2-golang/v2 | Go 1.24 | v2.0+ uses `netip.Addr` (Go 1.18+), v1.x uses deprecated `net.IP` |
 
-## Dockerfile Best Practices
+## Integration with Existing Code
 
-```dockerfile
-# Build stage
-FROM golang:1.26 AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/service ./cmd/service
+### Keep Using (No Changes)
 
-# Production stage
-FROM gcr.io/distroless/static-debian12
-COPY --from=builder /app/service /service
-USER nonroot:nonroot
-ENTRYPOINT ["/service"]
-```
+| Library | Reason | Integration |
+|---------|--------|-------------|
+| github.com/jaevor/go-nanoid | go-zero doesn't provide ID generation | Call from logic layer when creating URLs |
+| github.com/oschwald/geoip2-golang/v2 | go-zero doesn't provide GeoIP | Inject into service context, use in analytics logic |
+| testcontainers-go | Testing strategy unchanged | Use for PostgreSQL and Kafka integration tests |
 
-**Key points:**
-- Multi-stage build: reduces final image from ~800MB to ~10MB
-- `CGO_ENABLED=0`: fully static binary, no C dependencies
-- `-ldflags="-w -s"`: strips debug info and symbol tables (~30% size reduction)
-- distroless: no shell, minimal attack surface, passes security scans
-- USER nonroot: don't run as root
+### Replace Entirely
 
-## GitHub Actions CI/CD
+| Old | New | Migration Path |
+|-----|-----|----------------|
+| Chi router | go-zero `.api` specs | Rewrite routes as `.api` file, regenerate with goctl |
+| Dapr pub/sub | go-queue (Kafka) | Replace Dapr publish with `kq.Pusher.Push()`, Dapr subscribe with `kq.MustNewQueue()` |
+| Dapr service invocation | zRPC clients | Define `.proto`, generate client, call via `client.Method(ctx, req)` |
+| sqlc | goctl model (PostgreSQL) | Generate models from live PostgreSQL connection or migrate DDL |
+| Custom middleware | go-zero built-in | Remove rate limiter, configure in service YAML |
+| pkg/problemdetails | go-zero error handling | Use go-zero `httpx.Error()` with custom error types |
 
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.26'
-          cache: true
-      - name: Lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v2.9.0
-      - name: Generate mocks
-        run: go generate ./...
-      - name: Test
-        run: go test -v -race -coverprofile=coverage.out ./...
-      - name: Upload coverage
-        uses: codecov/codecov-action@v5
-        with:
-          files: ./coverage.out
-```
+### Built-in Features (Replace Custom Code)
 
-**Best practices:**
-- Run lint before tests (fail fast)
-- Use `-race` to detect race conditions
-- Generate code (mocks) before testing
-- Use actions/setup-go with `cache: true` for module caching
-- Upload coverage to track trends
-- Test on every push and PR
-
-## Confidence Levels
-
-| Component | Confidence | Source |
-|-----------|-----------|--------|
-| Go 1.26 | HIGH | Official Go release page (go.dev/doc/devel/release) |
-| Dapr SDK v1.13.0 | HIGH | Official GitHub releases (github.com/dapr/go-sdk/releases) |
-| modernc.org/sqlite | MEDIUM | Community consensus, multiple production users, but less official docs than mattn |
-| Chi router | HIGH | Active maintenance, large ecosystem, widely adopted in 2025 |
-| slog for logging | HIGH | Stdlib since Go 1.21, official recommendation for new projects |
-| validator/v10 | HIGH | De facto standard for Go validation, actively maintained |
-| Distroless images | HIGH | Google-maintained, industry best practice for Go containers |
-| golangci-lint v2 | HIGH | Official releases, latest v2.9.0 supports Go 1.26 |
+| Feature | go-zero Built-in | Configuration |
+|---------|------------------|---------------|
+| Rate limiting | Yes (token bucket) | Service config YAML: `MaxConns`, `MaxBytes` |
+| Circuit breaker | Yes (Google SRE algorithm, 10s sliding window) | Automatic, no config needed |
+| Load shedding | Yes (adaptive) | Automatic based on CPU/memory |
+| Timeout control | Yes (chained) | Service config YAML: `Timeout` |
+| Logging | Yes (logx package, structured JSON) | Service config YAML: `Log.Mode`, `Log.Level` |
+| Metrics | Yes (Prometheus on `:6470/metrics`) | Auto-enabled, custom metrics via `core/metric` |
+| Tracing | Yes (OpenTelemetry) | Service config YAML: `Telemetry.Name`, `Telemetry.Endpoint` |
+| Health checks | Yes (`/healthz` on `:6470`) | Auto-enabled |
 
 ## Sources
 
-### Official Documentation
-- [Go 1.26 Release Notes](https://go.dev/doc/go1.26) — Latest Go version
-- [Go Release History](https://go.dev/doc/devel/release) — Version verification
-- [Dapr Go SDK](https://docs.dapr.io/developing-applications/sdks/go/) — Official SDK docs
-- [Dapr Go SDK Releases](https://github.com/dapr/go-sdk/releases) — Version v1.13.0
-- [Go slog Package](https://pkg.go.dev/log/slog) — Stdlib structured logging
-
-### Framework and Library Documentation
-- [Chi Router](https://go-chi.io/) — Lightweight HTTP router
-- [Chi Middleware](https://pkg.go.dev/github.com/go-chi/chi/middleware) — Built-in middleware
-- [modernc.org/sqlite](https://pkg.go.dev/modernc.org/sqlite) — Pure Go SQLite driver
-- [validator/v10](https://pkg.go.dev/github.com/go-playground/validator/v10) — Struct validation
-- [google/uuid](https://pkg.go.dev/github.com/google/uuid) — UUID generation
-- [testify](https://github.com/stretchr/testify) — Testing toolkit
-- [mockery](https://vektra.github.io/mockery/latest/) — Mock generator
-
-### Best Practices and Guides
-- [The 8 best Go web frameworks for 2025](https://blog.logrocket.com/top-go-frameworks-2025/) — Framework comparison
-- [The Go Ecosystem in 2025](https://blog.jetbrains.com/go/2025/11/10/go-language-trends-ecosystem-2025/) — Ecosystem trends
-- [Which Go router should I use?](https://www.alexedwards.net/blog/which-go-router-should-i-use) — Router comparison
-- [Alpine, distroless or scratch?](https://medium.com/google-cloud/alpine-distroless-or-scratch-caac35250e0b) — Container base images
-- [GitHub Actions CI/CD Best Practices](https://github.com/github/awesome-copilot/blob/main/instructions/github-actions-ci-cd-best-practices.instructions.md)
-- [Go Graceful Shutdown Patterns](https://victoriametrics.com/blog/go-graceful-shutdown/) — Production patterns
-- [High-Performance Logging with slog](https://leapcell.io/blog/high-performance-structured-logging-in-go-with-slog-and-zerolog)
-
-### Community Resources
-- [Go Database Patterns: GORM, sqlx, and pgx Compared](https://dasroot.net/posts/2025/12/go-database-patterns-gorm-sqlx-pgx-compared/)
-- [Comparing Go ORMs (2025)](https://encore.cloud/resources/go-orms)
-- [Testing with Testify and Mockery](https://outcomeschool.com/blog/test-with-testify-and-mockery-in-go)
-- [Go Linting Best Practices](https://medium.com/@tedious/go-linting-best-practices-for-ci-cd-with-github-actions-aa6d96e0c509)
-- [golangci-lint v2 Changelog](https://golangci-lint.run/docs/product/changelog/)
+- [go-zero GitHub Releases](https://github.com/zeromicro/go-zero/releases) - v1.10.0 verified (Feb 15, 2025)
+- [goctl Installation](https://go-zero.dev/en/docs/tasks/installation/goctl) - Installation methods
+- [go-zero Kafka Integration](https://go-zero.dev/en/docs/tutorials/message-queue/kafka) - go-queue usage
+- [go-queue GitHub](https://github.com/zeromicro/go-queue) - v1.2.2 verified (July 24, 2024)
+- [goctl RPC Documentation](https://go-zero.dev/en/docs/tutorials/cli/rpc) - zRPC code generation
+- [jackc/pgx v5 Docs](https://pkg.go.dev/github.com/jackc/pgx/v5) - v5.8.0 verified (Dec 26, 2025)
+- [segmentio/kafka-go Releases](https://github.com/segmentio/kafka-go/releases) - v0.4.50 verified (Jan 15, 2025)
+- [go-zero Monitoring](https://go-zero.dev/en/docs/tutorials/monitor/index) - Built-in telemetry features
+- [gRPC Quickstart](https://grpc.io/docs/languages/go/quickstart/) - protoc plugin versions
+- [go-zero API Syntax](https://go-zero.dev/en/docs/tasks/dsl/api) - `.api` file format
+- [goctl Model Generation](https://go-zero.dev/en/docs/tutorials/cli/model) - Database code generation
+- [go-zero Architecture Evolution](https://go-zero.dev/en/docs/concepts/architecture-evolution) - Handler/Logic/Model pattern
+- [go-zero Circuit Breaker](https://go-zero.dev/en/docs/tutorials/service/governance/breaker) - Built-in resilience
+- [Go Database Patterns Comparison](https://dasroot.net/posts/2025/12/go-database-patterns-gorm-sqlx-pgx-compared/) - sqlx vs pgx performance
+- [oschwald/geoip2-golang GitHub](https://github.com/oschwald/geoip2-golang) - v2.0+ features
+- [gRPC-Go v1.78.0](https://grpc.io/docs/languages/go/quickstart/) - Security enhancements (Feb 11, 2026)
 
 ---
-*Stack research for: Go URL Shortener with Dapr Microservices*
-*Researched: 2026-02-14*
-*Confidence: HIGH — Verified with official docs and current releases*
+*Stack research for: go-zero microservices adoption*
+*Researched: 2026-02-15*
