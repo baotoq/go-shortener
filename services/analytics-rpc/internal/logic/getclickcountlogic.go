@@ -24,7 +24,14 @@ func NewGetClickCountLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Get
 }
 
 func (l *GetClickCountLogic) GetClickCount(in *analytics.GetClickCountRequest) (*analytics.GetClickCountResponse, error) {
-	// todo: add your logic here and delete this line
+	logx.WithContext(l.ctx).Infow("get click count",
+		logx.Field("short_code", in.ShortCode),
+	)
 
-	return &analytics.GetClickCountResponse{}, nil
+	// Phase 7 stub: return fake click count
+	// Phase 8: Query PostgreSQL for actual click count
+	return &analytics.GetClickCountResponse{
+		ShortCode:   in.ShortCode,
+		TotalClicks: 42,
+	}, nil
 }

@@ -1,6 +1,10 @@
-Name: analytics.rpc
-ListenOn: 0.0.0.0:8080
-Etcd:
-  Hosts:
-  - 127.0.0.1:2379
-  Key: analytics.rpc
+Name: analytics-rpc
+ListenOn: 0.0.0.0:8081
+
+Log:
+  ServiceName: analytics-rpc
+  Mode: console
+  Level: info
+
+# Phase 7: No etcd, no database, no Kafka
+# go-zero zRPC defaults to direct connection mode when Etcd is not configured
