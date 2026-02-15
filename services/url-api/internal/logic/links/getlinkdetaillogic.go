@@ -28,7 +28,14 @@ func NewGetLinkDetailLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Get
 }
 
 func (l *GetLinkDetailLogic) GetLinkDetail(req *types.LinkDetailRequest) (resp *types.LinkDetailResponse, err error) {
-	// todo: add your logic here and delete this line
+	logx.WithContext(l.ctx).Infow("get link detail", logx.Field("code", req.Code))
 
-	return
+	// Phase 7 stub: Return mock link detail
+	// Phase 8 adds: Database lookup by code
+	return &types.LinkDetailResponse{
+		ShortCode:   req.Code,
+		OriginalUrl: "https://example.com/stub",
+		CreatedAt:   1700000000,
+		TotalClicks: 42,
+	}, nil
 }

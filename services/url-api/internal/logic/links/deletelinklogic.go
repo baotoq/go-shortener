@@ -28,7 +28,9 @@ func NewDeleteLinkLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Delete
 }
 
 func (l *DeleteLinkLogic) DeleteLink(req *types.DeleteLinkRequest) error {
-	// todo: add your logic here and delete this line
+	logx.WithContext(l.ctx).Infow("delete link", logx.Field("code", req.Code))
 
+	// Phase 7 stub: Return success without actual deletion
+	// Phase 8 adds: Database delete operation
 	return nil
 }

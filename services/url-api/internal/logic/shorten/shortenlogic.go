@@ -28,7 +28,13 @@ func NewShortenLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ShortenLo
 }
 
 func (l *ShortenLogic) Shorten(req *types.ShortenRequest) (resp *types.ShortenResponse, err error) {
-	// todo: add your logic here and delete this line
+	logx.WithContext(l.ctx).Infow("shorten URL", logx.Field("original_url", req.OriginalUrl))
 
-	return
+	// Phase 7 stub: Return mock data to prove framework works
+	// Phase 8 adds: NanoID generation, database insert, duplicate check
+	return &types.ShortenResponse{
+		ShortCode:   "stub0001",
+		ShortUrl:    l.svcCtx.Config.BaseUrl + "/stub0001",
+		OriginalUrl: req.OriginalUrl,
+	}, nil
 }

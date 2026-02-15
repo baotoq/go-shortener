@@ -28,7 +28,21 @@ func NewListLinksLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ListLin
 }
 
 func (l *ListLinksLogic) ListLinks(req *types.LinkListRequest) (resp *types.LinkListResponse, err error) {
-	// todo: add your logic here and delete this line
+	logx.WithContext(l.ctx).Infow("list links",
+		logx.Field("page", req.Page),
+		logx.Field("per_page", req.PerPage),
+	)
 
-	return
+	// Phase 7 stub: Return mock paginated data
+	// Phase 8 adds: Database pagination, sorting, searching
+	return &types.LinkListResponse{
+		Links: []types.LinkItem{
+			{ShortCode: "stub0001", OriginalUrl: "https://example.com", CreatedAt: 1700000000},
+			{ShortCode: "stub0002", OriginalUrl: "https://go-zero.dev", CreatedAt: 1700000001},
+		},
+		Page:       req.Page,
+		PerPage:    req.PerPage,
+		TotalPages: 1,
+		TotalCount: 2,
+	}, nil
 }

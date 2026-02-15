@@ -5,6 +5,7 @@ package redirect
 
 import (
 	"context"
+	"fmt"
 
 	"go-shortener/services/url-api/internal/svc"
 	"go-shortener/services/url-api/internal/types"
@@ -28,7 +29,10 @@ func NewRedirectLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Redirect
 }
 
 func (l *RedirectLogic) Redirect(req *types.RedirectRequest) error {
-	// todo: add your logic here and delete this line
+	logx.WithContext(l.ctx).Infow("redirect", logx.Field("code", req.Code))
 
-	return nil
+	// Phase 7 stub: Redirect requires database lookup (implemented in Phase 8)
+	// Return not-found error to prove routing and error handling work
+	// Phase 8 adds: DB lookup, click event publishing, actual HTTP redirect
+	return fmt.Errorf("short code '%s' not found (stub - DB not connected)", req.Code)
 }
