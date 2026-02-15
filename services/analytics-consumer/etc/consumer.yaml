@@ -1,0 +1,20 @@
+Name: analytics-consumer
+
+Log:
+  ServiceName: analytics-consumer
+  Mode: console
+  Level: info
+
+DataSource: postgres://postgres:postgres@localhost:5433/shortener?sslmode=disable
+
+KqConsumerConf:
+  Name: clickEventConsumer
+  Brokers:
+    - localhost:9092
+  Group: analytics-consumer
+  Topic: click-events
+  Offset: first
+  Consumers: 4
+  Processors: 4
+
+GeoIPPath: data/GeoLite2-Country.mmdb

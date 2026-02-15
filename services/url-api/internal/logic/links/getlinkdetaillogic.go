@@ -8,6 +8,7 @@ import (
 	"errors"
 
 	"go-shortener/pkg/problemdetails"
+	"go-shortener/services/analytics-rpc/analyticsclient"
 	"go-shortener/services/url-api/internal/svc"
 	"go-shortener/services/url-api/internal/types"
 	"go-shortener/services/url-api/model"
@@ -44,10 +45,25 @@ func (l *GetLinkDetailLogic) GetLinkDetail(req *types.LinkDetailRequest) (resp *
 			"failed to look up link detail")
 	}
 
+	// Get click count from Analytics RPC service
+	var totalClicks int64
+	clickResp, rpcErr := l.svcCtx.AnalyticsRpc.GetClickCount(l.ctx, &analyticsclient.GetClickCountRequest{
+		ShortCode: req.Code,
+	})
+	if rpcErr != nil {
+		// Log but don't fail - degrade gracefully, return 0 clicks
+		logx.WithContext(l.ctx).Errorw("failed to get click count from analytics rpc, degrading gracefully",
+			logx.Field("code", req.Code),
+			logx.Field("error", rpcErr.Error()),
+		)
+	} else {
+		totalClicks = clickResp.TotalClicks
+	}
+
 	return &types.LinkDetailResponse{
 		ShortCode:   url.ShortCode,
 		OriginalUrl: url.OriginalUrl,
 		CreatedAt:   url.CreatedAt.Unix(),
-		TotalClicks: url.ClickCount,
+		TotalClicks: totalClicks,
 	}, nil
 }

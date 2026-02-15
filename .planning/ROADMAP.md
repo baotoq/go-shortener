@@ -72,9 +72,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 09-01-PLAN.md — Kafka infrastructure (Docker Compose KRaft), clicks enrichment migration, analytics-consumer scaffold
-- [ ] 09-02-PLAN.md — URL Service Kafka publishing (kq.Pusher, threading.GoSafe) + Analytics zRPC client wiring
-- [ ] 09-03-PLAN.md — Analytics consumer enrichment (GeoIP, UA parsing, referer) with idempotent inserts
+- [x] 09-01-PLAN.md — Kafka infrastructure (Docker Compose KRaft), clicks enrichment migration, analytics-consumer scaffold
+- [x] 09-02-PLAN.md — URL Service Kafka publishing (kq.Pusher, threading.GoSafe) + Analytics zRPC client wiring
+- [x] 09-03-PLAN.md — Analytics consumer enrichment (GeoIP, UA parsing, referer) with idempotent inserts
 
 #### Phase 10: Resilience & Infrastructure
 **Goal**: Enable go-zero production features and Docker Compose orchestration
@@ -107,9 +107,9 @@ Phases execute in numeric order: 7 → 8 → 9 → 10
 | 6. Test Coverage Hardening | v1.0 | 2/2 | ✓ Complete | 2026-02-15 |
 | 7. Framework Foundation | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 8. Database Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
-| 9. Messaging Migration | v2.0 | 0/3 | Planned | - |
+| 9. Messaging Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 10. Resilience & Infrastructure | v2.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-14*
-*Last updated: 2026-02-16 after Phase 8 execution complete*
+*Last updated: 2026-02-16 after Phase 9 execution complete*

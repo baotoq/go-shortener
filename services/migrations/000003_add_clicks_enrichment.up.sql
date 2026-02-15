@@ -1,0 +1,4 @@
+ALTER TABLE clicks
+  ADD COLUMN country_code  VARCHAR(2) NOT NULL DEFAULT 'XX',
+  ADD COLUMN device_type   VARCHAR(10) NOT NULL DEFAULT 'Unknown',
+  ADD COLUMN traffic_source VARCHAR(10) NOT NULL DEFAULT 'Unknown';

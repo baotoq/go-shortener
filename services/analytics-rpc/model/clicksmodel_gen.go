@@ -37,9 +37,12 @@ type (
 	}
 
 	Clicks struct {
-		Id        string    `db:"id"`
-		ShortCode string    `db:"short_code"`
-		ClickedAt time.Time `db:"clicked_at"`
+		Id            string    `db:"id"`
+		ShortCode     string    `db:"short_code"`
+		ClickedAt     time.Time `db:"clicked_at"`
+		CountryCode   string    `db:"country_code"`
+		DeviceType    string    `db:"device_type"`
+		TrafficSource string    `db:"traffic_source"`
 	}
 )
 
@@ -71,14 +74,14 @@ func (m *defaultClicksModel) FindOne(ctx context.Context, id string) (*Clicks, e
 }
 
 func (m *defaultClicksModel) Insert(ctx context.Context, data *Clicks) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3)", m.table, clicksRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.Id, data.ShortCode, data.ClickedAt)
+	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6)", m.table, clicksRowsExpectAutoSet)
+	ret, err := m.conn.ExecCtx(ctx, query, data.Id, data.ShortCode, data.ClickedAt, data.CountryCode, data.DeviceType, data.TrafficSource)
 	return ret, err
 }
 
 func (m *defaultClicksModel) Update(ctx context.Context, data *Clicks) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, clicksRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, data.Id, data.ShortCode, data.ClickedAt)
+	_, err := m.conn.ExecCtx(ctx, query, data.Id, data.ShortCode, data.ClickedAt, data.CountryCode, data.DeviceType, data.TrafficSource)
 	return err
 }
 
