@@ -110,6 +110,11 @@ func (s *AnalyticsService) GetClickDetails(ctx context.Context, shortCode string
 	return s.repo.GetClickDetails(ctx, shortCode, cursorTimestamp, limit)
 }
 
+// DeleteClickData removes all click records for a short code
+func (s *AnalyticsService) DeleteClickData(ctx context.Context, shortCode string) error {
+	return s.repo.DeleteByShortCode(ctx, shortCode)
+}
+
 // convertToBreakdownItems converts GroupCounts to BreakdownItems with percentage calculation
 func convertToBreakdownItems(groups []GroupCount, total int64) []BreakdownItem {
 	if total == 0 {

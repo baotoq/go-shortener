@@ -157,3 +157,8 @@ func (r *ClickRepository) GetClickDetails(ctx context.Context, shortCode string,
 		HasMore:    hasMore,
 	}, nil
 }
+
+// DeleteByShortCode removes all click records for a short code
+func (r *ClickRepository) DeleteByShortCode(ctx context.Context, shortCode string) error {
+	return r.queries.DeleteClicksByShortCode(ctx, shortCode)
+}

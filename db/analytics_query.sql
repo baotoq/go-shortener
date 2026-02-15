@@ -30,3 +30,6 @@ LIMIT ?;
 
 -- name: CountClicksByShortCode :one
 SELECT COUNT(*) as total_clicks FROM clicks WHERE short_code = ?;
+
+-- name: DeleteClicksByShortCode :exec
+DELETE FROM clicks WHERE short_code = ?;

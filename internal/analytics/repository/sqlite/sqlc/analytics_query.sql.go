@@ -158,6 +158,15 @@ func (q *Queries) CountClicksInRange(ctx context.Context, arg CountClicksInRange
 	return total, err
 }
 
+const deleteClicksByShortCode = `-- name: DeleteClicksByShortCode :exec
+DELETE FROM clicks WHERE short_code = ?
+`
+
+func (q *Queries) DeleteClicksByShortCode(ctx context.Context, shortCode string) error {
+	_, err := q.db.ExecContext(ctx, deleteClicksByShortCode, shortCode)
+	return err
+}
+
 const getClickDetails = `-- name: GetClickDetails :many
 SELECT id, short_code, clicked_at, country_code, device_type, traffic_source
 FROM clicks

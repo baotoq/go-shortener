@@ -14,6 +14,7 @@ type Querier interface {
 	CountBySourceInRange(ctx context.Context, arg CountBySourceInRangeParams) ([]CountBySourceInRangeRow, error)
 	CountClicksByShortCode(ctx context.Context, shortCode string) (int64, error)
 	CountClicksInRange(ctx context.Context, arg CountClicksInRangeParams) (int64, error)
+	DeleteClicksByShortCode(ctx context.Context, shortCode string) error
 	GetClickDetails(ctx context.Context, arg GetClickDetailsParams) ([]Click, error)
 	InsertEnrichedClick(ctx context.Context, arg InsertEnrichedClickParams) error
 }

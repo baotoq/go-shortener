@@ -174,6 +174,42 @@ func (h *Handler) HandleClickEvent(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// HandleLinkDeleted processes link deletion events from Dapr pub/sub.
+// This is called by the Dapr sidecar when a message arrives on the "link-deleted" topic.
+// Route: POST /events/link-deleted
+func (h *Handler) HandleLinkDeleted(w http.ResponseWriter, r *http.Request) {
+	var cloudEvent struct {
+		Data json.RawMessage `json:"data"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&cloudEvent); err != nil {
+		h.logger.Error("failed to decode link deleted cloud event", zap.Error(err))
+		w.WriteHeader(http.StatusOK) // Acknowledge malformed events
+		return
+	}
+
+	var event events.LinkDeletedEvent
+	if err := json.Unmarshal(cloudEvent.Data, &event); err != nil {
+		h.logger.Error("failed to unmarshal link deleted event", zap.Error(err))
+		w.WriteHeader(http.StatusOK) // Acknowledge malformed events
+		return
+	}
+
+	if err := h.analyticsService.DeleteClickData(r.Context(), event.ShortCode); err != nil {
+		h.logger.Error("failed to delete click data",
+			zap.String("short_code", event.ShortCode),
+			zap.Error(err),
+		)
+		// Acknowledge event to prevent infinite retries
+	}
+
+	h.logger.Info("deleted click data for link",
+		zap.String("short_code", event.ShortCode),
+	)
+
+	w.WriteHeader(http.StatusOK)
+}
+
 // parseTimeRange parses from and to query parameters
 func parseTimeRange(r *http.Request) (from int64, to int64, err error) {
 	fromStr := r.URL.Query().Get("from")

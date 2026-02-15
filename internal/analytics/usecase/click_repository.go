@@ -40,4 +40,6 @@ type ClickRepository interface {
 	CountBySourceInRange(ctx context.Context, shortCode string, from int64, to int64) ([]GroupCount, error)
 	// GetClickDetails returns paginated individual click records.
 	GetClickDetails(ctx context.Context, shortCode string, cursorTimestamp int64, limit int) (*PaginatedClicks, error)
+	// DeleteByShortCode removes all click records for a short code.
+	DeleteByShortCode(ctx context.Context, shortCode string) error
 }

@@ -25,13 +25,19 @@ func NewRouter(handler *Handler, logger *zap.Logger) http.Handler {
 				"topic":      "clicks",
 				"route":      "/events/click",
 			},
+			{
+				"pubsubname": "pubsub",
+				"topic":      "link-deleted",
+				"route":      "/events/link-deleted",
+			},
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(subscriptions)
 	})
 
-	// Dapr event delivery endpoint
+	// Dapr event delivery endpoints
 	r.Post("/events/click", handler.HandleClickEvent)
+	r.Post("/events/link-deleted", handler.HandleLinkDeleted)
 
 	// Analytics API
 	r.Get("/analytics/{code}", handler.GetClickCount)
