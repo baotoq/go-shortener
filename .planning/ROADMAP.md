@@ -62,10 +62,12 @@ Plans:
   2. Analytics API returns device type and browser from User-Agent
   3. Analytics API returns traffic source from Referer header
   4. All enrichment happens in Analytics Service (redirect path stays fast)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 03-01-PLAN.md -- Extend ClickEvent payload, enrichment services (GeoIP, User-Agent, Referer)
+- [ ] 03-02-PLAN.md -- Database migration, sqlc queries, repository for enriched click data
+- [ ] 03-03-PLAN.md -- AnalyticsService enrichment wiring, summary/detail HTTP endpoints
 
 ### Phase 4: Link Management
 **Goal**: Users can discover and manage their created short links
@@ -104,7 +106,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Foundation & URL Service Core | 3/3 | ✓ Complete | 2026-02-15 |
 | 2. Event-Driven Analytics | 3/3 | ✓ Complete | 2026-02-15 |
-| 3. Enhanced Analytics | 0/TBD | Not started | - |
+| 3. Enhanced Analytics | 0/3 | Not started | - |
 | 4. Link Management | 0/TBD | Not started | - |
 | 5. Production Readiness | 0/TBD | Not started | - |
 
