@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Enhanced Analytics** - Geo-location, device, and traffic source tracking
 - [x] **Phase 4: Link Management** - List and manage created short links
 - [x] **Phase 5: Production Readiness** - Testing, CI/CD, Docker, and production deployment
+- [ ] **Phase 6: Test Coverage Hardening** - Close handler coverage gap and add Dapr sidecar integration tests
 
 ## Phase Details
 
@@ -102,10 +103,26 @@ Plans:
 - [x] 05-04-PLAN.md -- Dockerfiles, Docker Compose with Dapr sidecars, golangci-lint config
 - [x] 05-05-PLAN.md -- GitHub Actions CI pipeline, coverage thresholds, Makefile targets
 
+### Phase 6: Test Coverage Hardening
+**Goal**: All test layers meet coverage targets and Dapr integration is verified with real sidecars
+**Depends on**: Phase 5
+**Requirements**: PROD-01 (full coverage), PROD-02 (real Dapr tests)
+**Gap Closure**: Closes tech debt from v1.0 milestone audit
+**Success Criteria** (what must be TRUE):
+  1. URL handler test coverage reaches 80%+ (currently 44.6%)
+  2. At least one integration test exercises real Dapr pub/sub and service invocation
+  3. All existing tests continue to pass
+  4. CI coverage gates pass with updated thresholds
+**Plans**: 2 plans
+
+Plans:
+- [ ] 06-01-PLAN.md -- Increase URL Service handler test coverage to 80%+
+- [ ] 06-02-PLAN.md -- Add Dapr sidecar integration tests (real pub/sub + service invocation)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -114,6 +131,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 3. Enhanced Analytics | 3/3 | ✓ Complete | 2026-02-15 |
 | 4. Link Management | 2/2 | ✓ Complete | 2026-02-15 |
 | 5. Production Readiness | 5/5 | ✓ Complete | 2026-02-15 |
+| 6. Test Coverage Hardening | 0/2 | In Progress | — |
 
 ---
 *Roadmap created: 2026-02-14*
