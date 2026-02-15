@@ -1,0 +1,14 @@
+dir: "{{.InterfaceDir}}/mocks"
+pkgname: mocks
+structname: "Mock{{.InterfaceName}}"
+filename: "{{.InterfaceName}}.go"
+packages:
+  go-shortener/internal/urlservice/usecase:
+    interfaces:
+      URLRepository:
+  go-shortener/internal/analytics/usecase:
+    interfaces:
+      ClickRepository:
+      GeoIPResolver:
+      DeviceDetector:
+      RefererClassifier:

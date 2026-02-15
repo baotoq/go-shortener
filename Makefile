@@ -1,4 +1,4 @@
-.PHONY: run-url run-analytics run-all build
+.PHONY: run-url run-analytics run-all build generate-mocks
 
 # Run URL Service with Dapr sidecar
 run-url:
@@ -16,3 +16,7 @@ run-all:
 build:
 	go build -o bin/url-service ./cmd/url-service
 	go build -o bin/analytics-service ./cmd/analytics-service
+
+# Generate mocks for all interfaces
+generate-mocks:
+	mockery --config .mockery.yaml
