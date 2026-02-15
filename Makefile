@@ -1,4 +1,4 @@
-.PHONY: run-url run-analytics run-all build generate-mocks
+.PHONY: run-url run-analytics run-all build generate-mocks docker-up docker-down
 
 # Run URL Service with Dapr sidecar
 run-url:
@@ -20,3 +20,11 @@ build:
 # Generate mocks for all interfaces
 generate-mocks:
 	mockery --config .mockery.yaml
+
+# Start all services with Docker Compose
+docker-up:
+	docker compose up --build -d
+
+# Stop all services
+docker-down:
+	docker compose down

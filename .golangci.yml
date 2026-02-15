@@ -1,0 +1,34 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - revive
+    - gocyclo
+    - goconst
+    - unparam
+
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+issues:
+  exclude-dirs:
+    - internal/urlservice/repository/sqlite/sqlc
+    - internal/analytics/repository/sqlite/sqlc
+  exclude-rules:
+    # Exclude errcheck in test files
+    - path: _test\.go
+      linters:
+        - errcheck
