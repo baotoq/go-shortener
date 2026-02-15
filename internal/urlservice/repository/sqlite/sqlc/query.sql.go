@@ -9,6 +9,27 @@ import (
 	"context"
 )
 
+const countURLs = `-- name: CountURLs :one
+SELECT COUNT(*) FROM urls
+WHERE
+  (?1 IS NULL OR created_at >= ?1)
+  AND (?2 IS NULL OR created_at <= ?2)
+  AND (?3 IS NULL OR original_url LIKE '%' || ?3 || '%')
+`
+
+type CountURLsParams struct {
+	CreatedAfter  interface{} `json:"created_after"`
+	CreatedBefore interface{} `json:"created_before"`
+	Search        interface{} `json:"search"`
+}
+
+func (q *Queries) CountURLs(ctx context.Context, arg CountURLsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countURLs, arg.CreatedAfter, arg.CreatedBefore, arg.Search)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createURL = `-- name: CreateURL :one
 INSERT INTO urls (short_code, original_url)
 VALUES (?, ?)
@@ -30,6 +51,15 @@ func (q *Queries) CreateURL(ctx context.Context, arg CreateURLParams) (Url, erro
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const deleteURL = `-- name: DeleteURL :exec
+DELETE FROM urls WHERE short_code = ?
+`
+
+func (q *Queries) DeleteURL(ctx context.Context, shortCode string) error {
+	_, err := q.db.ExecContext(ctx, deleteURL, shortCode)
+	return err
 }
 
 const findByOriginalURL = `-- name: FindByOriginalURL :one
@@ -62,4 +92,108 @@ func (q *Queries) FindByShortCode(ctx context.Context, shortCode string) (Url, e
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const listURLs = `-- name: ListURLs :many
+SELECT id, short_code, original_url, created_at FROM urls
+WHERE
+  (?1 IS NULL OR created_at >= ?1)
+  AND (?2 IS NULL OR created_at <= ?2)
+  AND (?3 IS NULL OR original_url LIKE '%' || ?3 || '%')
+ORDER BY created_at DESC
+LIMIT ?5 OFFSET ?4
+`
+
+type ListURLsParams struct {
+	CreatedAfter  interface{} `json:"created_after"`
+	CreatedBefore interface{} `json:"created_before"`
+	Search        interface{} `json:"search"`
+	Offset        int64       `json:"offset"`
+	Limit         int64       `json:"limit"`
+}
+
+func (q *Queries) ListURLs(ctx context.Context, arg ListURLsParams) ([]Url, error) {
+	rows, err := q.db.QueryContext(ctx, listURLs,
+		arg.CreatedAfter,
+		arg.CreatedBefore,
+		arg.Search,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Url
+	for rows.Next() {
+		var i Url
+		if err := rows.Scan(
+			&i.ID,
+			&i.ShortCode,
+			&i.OriginalUrl,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listURLsAsc = `-- name: ListURLsAsc :many
+SELECT id, short_code, original_url, created_at FROM urls
+WHERE
+  (?1 IS NULL OR created_at >= ?1)
+  AND (?2 IS NULL OR created_at <= ?2)
+  AND (?3 IS NULL OR original_url LIKE '%' || ?3 || '%')
+ORDER BY created_at ASC
+LIMIT ?5 OFFSET ?4
+`
+
+type ListURLsAscParams struct {
+	CreatedAfter  interface{} `json:"created_after"`
+	CreatedBefore interface{} `json:"created_before"`
+	Search        interface{} `json:"search"`
+	Offset        int64       `json:"offset"`
+	Limit         int64       `json:"limit"`
+}
+
+func (q *Queries) ListURLsAsc(ctx context.Context, arg ListURLsAscParams) ([]Url, error) {
+	rows, err := q.db.QueryContext(ctx, listURLsAsc,
+		arg.CreatedAfter,
+		arg.CreatedBefore,
+		arg.Search,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Url
+	for rows.Next() {
+		var i Url
+		if err := rows.Scan(
+			&i.ID,
+			&i.ShortCode,
+			&i.OriginalUrl,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

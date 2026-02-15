@@ -9,9 +9,13 @@ import (
 )
 
 type Querier interface {
+	CountURLs(ctx context.Context, arg CountURLsParams) (int64, error)
 	CreateURL(ctx context.Context, arg CreateURLParams) (Url, error)
+	DeleteURL(ctx context.Context, shortCode string) error
 	FindByOriginalURL(ctx context.Context, originalUrl string) (Url, error)
 	FindByShortCode(ctx context.Context, shortCode string) (Url, error)
+	ListURLs(ctx context.Context, arg ListURLsParams) ([]Url, error)
+	ListURLsAsc(ctx context.Context, arg ListURLsAscParams) ([]Url, error)
 }
 
 var _ Querier = (*Queries)(nil)
