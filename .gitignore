@@ -37,6 +37,3 @@ bin/
 .idea/
 *.swp
 
-# Generated mocks (keep .gitkeep)
-internal/mocks/*
-!internal/mocks/.gitkeep
