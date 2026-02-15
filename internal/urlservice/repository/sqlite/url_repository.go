@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"errors"
 
-	"go-shortener/internal/domain"
-	"go-shortener/internal/repository/sqlite/sqlc"
-	"go-shortener/internal/usecase"
+	"go-shortener/internal/urlservice/domain"
+	"go-shortener/internal/urlservice/repository/sqlite/sqlc"
+	"go-shortener/internal/urlservice/usecase"
 )
 
 // URLRepository implements the usecase.URLRepository interface using sqlc

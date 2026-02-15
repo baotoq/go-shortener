@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
-	"go-shortener/internal/domain"
-	"go-shortener/internal/usecase"
+	"go-shortener/internal/urlservice/domain"
+	"go-shortener/internal/urlservice/usecase"
 	"go-shortener/pkg/problemdetails"
 	"github.com/go-chi/chi/v5"
 )

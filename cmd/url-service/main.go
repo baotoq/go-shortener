@@ -10,10 +10,10 @@ import (
 	"syscall"
 	"time"
 
-	"go-shortener/internal/database"
-	httpdelivery "go-shortener/internal/delivery/http"
-	"go-shortener/internal/repository/sqlite"
-	"go-shortener/internal/usecase"
+	"go-shortener/internal/urlservice/database"
+	httpdelivery "go-shortener/internal/urlservice/delivery/http"
+	"go-shortener/internal/urlservice/repository/sqlite"
+	"go-shortener/internal/urlservice/usecase"
 
 	_ "modernc.org/sqlite"
 

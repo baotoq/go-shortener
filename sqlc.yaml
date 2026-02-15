@@ -6,6 +6,6 @@ sql:
     gen:
       go:
         package: "sqlc"
-        out: "internal/repository/sqlite/sqlc"
+        out: "internal/urlservice/repository/sqlite/sqlc"
         emit_json_tags: true
         emit_interface: true

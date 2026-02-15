@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"go-shortener/internal/domain"
+	"go-shortener/internal/urlservice/domain"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
 )

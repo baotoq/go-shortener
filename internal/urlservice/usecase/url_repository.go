@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"context"
-	"go-shortener/internal/domain"
+	"go-shortener/internal/urlservice/domain"
 )
 
 type URLRepository interface {
