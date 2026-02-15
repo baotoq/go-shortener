@@ -400,3 +400,10 @@ The GeoLite2 database is optional. To enable geo-location:
 ### SQLite locked errors
 
 SQLite is configured with `SetMaxOpenConns(1)`. If you see locking errors, ensure only one instance of each service is running against the same database file.
+
+
+One-Prompt Setup
+Just tell your AI assistant:
+```
+Set up go-zero AI tools for this project from https://github.com/zeromicro/ai-context
+```
