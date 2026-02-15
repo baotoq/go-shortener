@@ -15,6 +15,7 @@ import (
 	"go-shortener/internal/urlservice/repository/sqlite"
 	"go-shortener/internal/urlservice/usecase"
 
+	dapr "github.com/dapr/go-sdk/client"
 	_ "modernc.org/sqlite"
 
 	"go.uber.org/zap"
@@ -66,10 +67,19 @@ func main() {
 
 	logger.Info("database initialized", zap.String("path", databasePath))
 
+	// Create Dapr client for pub/sub publishing
+	daprClient, err := dapr.NewClient()
+	if err != nil {
+		// Log warning but don't fail — service can run without Dapr for local dev
+		logger.Warn("failed to create Dapr client, click tracking disabled", zap.Error(err))
+	} else {
+		defer daprClient.Close()
+	}
+
 	// Wire dependencies
 	repo := sqlite.NewURLRepository(db)
 	service := usecase.NewURLService(repo)
-	handler := httpdelivery.NewHandler(service, baseURL)
+	handler := httpdelivery.NewHandler(service, baseURL, daprClient, logger)
 	rateLimiter := httpdelivery.NewRateLimiter(rateLimit)
 	router := httpdelivery.NewRouter(handler, logger, rateLimiter)
 

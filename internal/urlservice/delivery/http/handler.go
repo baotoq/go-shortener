@@ -1,27 +1,36 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
+	"go-shortener/internal/shared/events"
 	"go-shortener/internal/urlservice/domain"
 	"go-shortener/internal/urlservice/usecase"
 	"go-shortener/pkg/problemdetails"
+	dapr "github.com/dapr/go-sdk/client"
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 )
 
 // Handler handles HTTP requests for URL operations
 type Handler struct {
-	service *usecase.URLService
-	baseURL string
+	service    *usecase.URLService
+	baseURL    string
+	daprClient dapr.Client  // may be nil if Dapr unavailable
+	logger     *zap.Logger
 }
 
 // NewHandler creates a new Handler
-func NewHandler(service *usecase.URLService, baseURL string) *Handler {
+func NewHandler(service *usecase.URLService, baseURL string, daprClient dapr.Client, logger *zap.Logger) *Handler {
 	return &Handler{
-		service: service,
-		baseURL: baseURL,
+		service:    service,
+		baseURL:    baseURL,
+		daprClient: daprClient,
+		logger:     logger,
 	}
 }
 
@@ -139,7 +148,14 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Send redirect response FIRST
 	http.Redirect(w, r, url.OriginalURL, http.StatusFound)
+
+	// Fire-and-forget: publish click event after redirect
+	// Per user decision: on failure, log error and continue
+	if h.daprClient != nil {
+		go h.publishClickEvent(code)
+	}
 }
 
 // GetURLDetails handles GET /api/v1/urls/{code}
@@ -178,4 +194,34 @@ func (h *Handler) GetURLDetails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, response)
+}
+
+const (
+	pubsubName = "pubsub"
+	topicName  = "clicks"
+)
+
+func (h *Handler) publishClickEvent(shortCode string) {
+	event := events.ClickEvent{
+		ShortCode: shortCode,
+		Timestamp: time.Now().UTC(),
+	}
+
+	data, err := json.Marshal(event)
+	if err != nil {
+		h.logger.Error("failed to marshal click event",
+			zap.String("short_code", shortCode),
+			zap.Error(err),
+		)
+		return
+	}
+
+	ctx := context.Background()
+	if err := h.daprClient.PublishEvent(ctx, pubsubName, topicName, data); err != nil {
+		h.logger.Error("failed to publish click event",
+			zap.String("short_code", shortCode),
+			zap.Error(err),
+		)
+		// Click is lost, redirect already succeeded — per user decision
+	}
 }
