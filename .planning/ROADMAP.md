@@ -83,14 +83,15 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Services expose Prometheus metrics on /metrics endpoint with request duration and status code data
   2. Circuit breaker protects PostgreSQL and Kafka calls (fails fast when downstream is unhealthy)
-  3. Docker Compose starts all services (PostgreSQL, Zookeeper, Kafka, url-service, analytics-rpc, analytics-consumer) successfully
+  3. Docker Compose starts all services (PostgreSQL, Kafka, url-api, analytics-rpc, analytics-consumer) successfully
   4. End-to-end flow works: shorten URL → visit short link → redirect → click event published → analytics enriched → counts queryable via zRPC
   5. Test coverage maintains 80%+ across services with unit and integration tests passing in CI
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 10-01: TBD
-- [ ] 10-02: TBD
+- [ ] 10-01-PLAN.md -- Resilience & Observability (Prometheus DevServer, circuit breakers, timeouts, load shedding config)
+- [ ] 10-02-PLAN.md -- Docker Compose Orchestration (Dockerfile, full-stack compose, Docker configs, Makefile targets)
+- [ ] 10-03-PLAN.md -- Test Coverage (mock models, unit tests for all logic/consumer, 80%+ coverage)
 
 ## Progress
 
@@ -108,8 +109,8 @@ Phases execute in numeric order: 7 → 8 → 9 → 10
 | 7. Framework Foundation | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 8. Database Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 9. Messaging Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
-| 10. Resilience & Infrastructure | v2.0 | 0/TBD | Not started | - |
+| 10. Resilience & Infrastructure | v2.0 | 0/3 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-14*
-*Last updated: 2026-02-16 after Phase 9 execution complete*
+*Last updated: 2026-02-16 after Phase 10 planning complete*
