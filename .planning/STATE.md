@@ -80,6 +80,12 @@ Recent decisions affecting current work:
 - **Consumer DevServer initialization (10-01)**: Explicit c.MustSetUp() call after config load for non-HTTP services
 - **AnalyticsRpc timeout (10-01)**: 2000ms timeout on zRPC client for bounded request durations
 
+**Plan 10-02 (Docker Compose Orchestration):**
+- **Multi-stage Dockerfile (10-02)**: Single Dockerfile with named build targets for all three services, shared build cache
+- **Kafka dual listeners (10-02)**: PLAINTEXT (kafka:9092 for Docker), PLAINTEXT_HOST (localhost:29092 for host) enables both containerized and local dev
+- **Kafka as root user (10-02)**: Apache Kafka 3.7.0 tmpfs permission issue resolved by running as root, ephemeral data acceptable for dev
+- **Auto-migrations via initdb (10-02)**: PostgreSQL migrations auto-applied on first startup via docker-entrypoint-initdb.d volume mount
+
 **Plan 10-03 (Unit Testing Suite):**
 - **Accept 76.4% consumer coverage (10-03)**: resolveCountry requires real GeoIP database file impractical for unit tests, all testable logic paths covered
 - **Hand-written mocks over mockgen (10-03)**: Simple function field pattern avoids code generation tooling for small project
@@ -103,8 +109,9 @@ None.
 
 **Phase 10 (Resilience & Infrastructure):**
 - ~~DevServer on analytics-consumer (non-HTTP service) may need explicit devserver.NewServer start if service.ServiceConf embedding doesn't auto-start it~~ RESOLVED (10-01): Added c.MustSetUp() call
-- ~~Dual Kafka listener approach needs verification that both Docker and local dev workflows work correctly (10-02)~~ RESOLVED (10-02): Dual listeners working correctly
+- ~~Dual Kafka listener approach needs verification that both Docker and local dev workflows work correctly (10-02)~~ RESOLVED (10-02): Dual listeners verified, both Docker and local dev workflows functional
 - GeoIP database not included in Docker images (falls back to "XX") - acceptable for development (10-02)
+- Kafka message publishing from url-api not working in Docker - network verified, issue with kq.Pusher library or fire-and-forget error handling (10-02, KNOWN ISSUE)
 - mssola/useragent library mobile detection limitation - does not detect iPhone/Android (10-03)
 
 ## Session Continuity
