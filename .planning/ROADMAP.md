@@ -106,9 +106,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 11-01-PLAN.md — Connection pool configuration and health check endpoints for all services
-- [ ] 11-02-PLAN.md — Fix Kafka Docker publishing (click events reach analytics-consumer)
-- [ ] 11-03-PLAN.md — CI pipeline update and testcontainers integration tests
+- [x] 11-01-PLAN.md — Connection pool configuration and health check endpoints for all services
+- [x] 11-02-PLAN.md — Fix Kafka Docker publishing (click events reach analytics-consumer)
+- [x] 11-03-PLAN.md — CI pipeline update and testcontainers integration tests
 
 ## Progress
 
@@ -127,7 +127,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11
 | 8. Database Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 9. Messaging Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 10. Resilience & Infrastructure | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
-| 11. CI Pipeline & Docker Hardening | v2.0 | 0/3 | Pending | - |
+| 11. CI Pipeline & Docker Hardening | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 
 ---
 *Roadmap created: 2026-02-14*

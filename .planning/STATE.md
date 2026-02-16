@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Shorten a long URL and reliably redirect anyone who visits the short link
-**Current focus:** Phase 10 - Resilience & Infrastructure (IN PROGRESS)
+**Current focus:** Phase 11 - CI Pipeline & Docker Hardening (COMPLETE)
 
 ## Current Position
 
-Phase: 10 of 10 (Resilience & Infrastructure)
+Phase: 11 of 11 (CI Pipeline & Docker Hardening)
 Plan: 3 of 3 in current phase
-Status: Phase Complete (10-03 complete: Unit testing suite)
-Last activity: 2026-02-16 - Completed 10-03-PLAN.md (Unit Testing Suite)
+Status: Phase Complete (11-03 complete: CI pipeline & integration tests)
+Last activity: 2026-02-16 - Completed Phase 11 (all 3 plans)
 
-Progress: [██████████] 100% (30/30 total plans)
+Progress: [██████████] 100% (33/33 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30 (v1.0: 18, v2.0: 12)
-- Average duration: 228s (v2.0 phases 7-10)
-- Total execution time: ~2730s (v2.0 actual)
+- Total plans completed: 33 (v1.0: 18, v2.0: 15)
+- Average duration: 218s (v2.0 phases 7-11)
+- Total execution time: ~3330s (v2.0 actual)
 
 **By Phase:**
 
@@ -37,12 +37,13 @@ Progress: [██████████] 100% (30/30 total plans)
 | 8. Database Migration | 3 | ~550s | ~183s |
 | 9. Messaging Migration | 3 | ~600s | ~200s |
 | 10. Resilience & Infrastructure | 3 | 927s | 309s |
+| 11. CI Pipeline & Docker Hardening | 3 | ~600s | ~200s |
 
 **Recent Trend:**
 - v1.0 completed: 6 phases, 18 plans
-- v2.0 COMPLETE: Phase 7 COMPLETE, Phase 8 COMPLETE, Phase 9 COMPLETE, Phase 10 COMPLETE (all 12 plans)
+- v2.0 COMPLETE: Phases 7-11 all complete (15 plans total)
 
-*Updated: 2026-02-16 after 10-03 execution complete*
+*Updated: 2026-02-16 after Phase 11 execution complete*
 
 ## Accumulated Context
 
@@ -101,6 +102,24 @@ Recent decisions affecting current work:
 - **Hand-written mocks (10-03)**: Simple mock structs implementing model interfaces, no mockgen tooling
 - **Unit tests only (10-03)**: No integration tests with testcontainers in this phase (deferred to CI pipeline)
 
+### Phase 11 Execution Decisions
+
+**Plan 11-01 (Connection Pool & Health Checks):**
+- **PoolConfig as int seconds (11-01)**: ConnMaxLifetime stored as int, converted to time.Duration in ServiceContext (go-zero json doesn't parse durations)
+- **Dedicated health server for consumer (11-01)**: analytics-consumer runs separate HTTP server on port 8082 in goroutine (no REST framework)
+- **Liveness-only health checks (11-01)**: /healthz confirms process is running, no DB/Kafka probing
+
+**Plan 11-02 (Kafka Docker Fix):**
+- **Advertised listener fix (11-02)**: PLAINTEXT_HOST changed from localhost:29092 to localhost:9092 to match host port mapping
+- **Auto-create topics enabled (11-02)**: KAFKA_AUTO_CREATE_TOPICS_ENABLE for reliable first-run topic creation
+
+**Plan 11-03 (CI Pipeline & Integration Tests):**
+- **golangci-lint v2 format (11-03)**: linters.settings replaces linters-settings, linters.exclusions replaces issues.exclude-*
+- **Suppress SA5008/ST checks (11-03)**: go-zero uses custom json tags and non-standard naming conventions
+- **Removed revive linter (11-03)**: go-zero framework doesn't follow standard Go doc comment conventions
+- **testcontainers-go with pgx driver (11-03)**: Integration tests use pgx for testcontainers compatibility
+- **Build tag gating (11-03)**: //go:build integration prevents integration tests from running in unit test job
+
 ### Pending Todos
 
 None.
@@ -111,16 +130,16 @@ None.
 - ~~DevServer on analytics-consumer (non-HTTP service) may need explicit devserver.NewServer start if service.ServiceConf embedding doesn't auto-start it~~ RESOLVED (10-01): Added c.MustSetUp() call
 - ~~Dual Kafka listener approach needs verification that both Docker and local dev workflows work correctly (10-02)~~ RESOLVED (10-02): Dual listeners verified, both Docker and local dev workflows functional
 - GeoIP database not included in Docker images (falls back to "XX") - acceptable for development (10-02)
-- Kafka message publishing from url-api not working in Docker - network verified, issue with kq.Pusher library or fire-and-forget error handling (10-02, KNOWN ISSUE)
+- ~~Kafka message publishing from url-api not working in Docker~~ RESOLVED (11-02): Fixed PLAINTEXT_HOST advertised listener from localhost:29092 to localhost:9092
 - mssola/useragent library mobile detection limitation - does not detect iPhone/Android (10-03)
 
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 10-03-PLAN.md (Unit Testing Suite) - Phase 10 COMPLETE
+Stopped at: Completed Phase 11 (CI Pipeline & Docker Hardening) - all 3 plans
 Resume file: N/A
-Next action: All v2.0 plans complete - Project ready for deployment
+Next action: v2.0 milestone complete - all 15 plans across phases 7-11 done
 
 ---
 *Initialized: 2026-02-14*
-*Last updated: 2026-02-16 after 10-03 execution complete (Phase 10 COMPLETE, v2.0 COMPLETE)*
+*Last updated: 2026-02-16 after Phase 11 execution complete (v2.0 COMPLETE)*
