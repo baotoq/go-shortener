@@ -1,0 +1,26 @@
+Name: analytics-consumer
+
+DevServer:
+  Enabled: true
+  Port: 6472
+  MetricsPath: /metrics
+  HealthPath: /healthz
+
+Log:
+  ServiceName: analytics-consumer
+  Mode: console
+  Level: info
+
+DataSource: postgres://postgres:postgres@postgres:5432/shortener?sslmode=disable
+
+KqConsumerConf:
+  Name: clickEventConsumer
+  Brokers:
+    - kafka:9092
+  Group: analytics-consumer
+  Topic: click-events
+  Offset: first
+  Consumers: 4
+  Processors: 4
+
+GeoIPPath: ""

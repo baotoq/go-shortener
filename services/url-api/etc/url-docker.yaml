@@ -1,0 +1,30 @@
+Name: url-api
+Host: 0.0.0.0
+Port: 8080
+Timeout: 30000
+MaxConns: 10000
+
+DevServer:
+  Enabled: true
+  Port: 6470
+  MetricsPath: /metrics
+  HealthPath: /healthz
+
+Log:
+  ServiceName: url-api
+  Mode: console
+  Level: info
+
+BaseUrl: http://localhost:8080
+
+DataSource: postgres://postgres:postgres@postgres:5432/shortener?sslmode=disable
+
+KqPusherConf:
+  Brokers:
+    - kafka:9092
+  Topic: click-events
+
+AnalyticsRpc:
+  Target: dns:///analytics-rpc:8081
+  NonBlock: true
+  Timeout: 2000
