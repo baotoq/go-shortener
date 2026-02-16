@@ -103,7 +103,12 @@ Plans:
   2. Kafka publishing from url-api works in Docker Compose environment (click events reach analytics-consumer)
   3. PostgreSQL connection pool explicitly configured (MaxOpenConns, MaxIdleConns, ConnMaxLifetime)
   4. analytics-consumer healthz endpoint returns OK when consumer is connected to Kafka
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 11-01-PLAN.md — Connection pool configuration and health check endpoints for all services
+- [ ] 11-02-PLAN.md — Fix Kafka Docker publishing (click events reach analytics-consumer)
+- [ ] 11-03-PLAN.md — CI pipeline update and testcontainers integration tests
 
 ## Progress
 
@@ -122,7 +127,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11
 | 8. Database Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 9. Messaging Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 10. Resilience & Infrastructure | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
-| 11. CI Pipeline & Docker Hardening | v2.0 | 0/TBD | Pending | - |
+| 11. CI Pipeline & Docker Hardening | v2.0 | 0/3 | Pending | - |
 
 ---
 *Roadmap created: 2026-02-14*
