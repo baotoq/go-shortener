@@ -1,5 +1,11 @@
 Name: analytics-consumer
 
+DevServer:
+  Enabled: true
+  Port: 6472
+  MetricsPath: /metrics
+  HealthPath: /healthz
+
 Log:
   ServiceName: analytics-consumer
   Mode: console

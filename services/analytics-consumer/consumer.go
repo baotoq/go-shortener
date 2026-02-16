@@ -21,6 +21,10 @@ func main() {
 
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
+
+	// Setup service infrastructure (logging, metrics, devserver, etc.)
+	c.MustSetUp()
+
 	svcCtx := svc.NewServiceContext(c)
 
 	group := service.NewServiceGroup()

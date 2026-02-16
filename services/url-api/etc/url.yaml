@@ -4,6 +4,12 @@ Port: 8080
 Timeout: 30000
 MaxConns: 10000
 
+DevServer:
+  Enabled: true
+  Port: 6470
+  MetricsPath: /metrics
+  HealthPath: /healthz
+
 Log:
   ServiceName: url-api
   Mode: console
@@ -21,3 +27,4 @@ KqPusherConf:
 AnalyticsRpc:
   Target: dns:///localhost:8081
   NonBlock: true
+  Timeout: 2000

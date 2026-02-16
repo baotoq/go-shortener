@@ -1,6 +1,12 @@
 Name: analytics-rpc
 ListenOn: 0.0.0.0:8081
 
+DevServer:
+  Enabled: true
+  Port: 6471
+  MetricsPath: /metrics
+  HealthPath: /healthz
+
 Log:
   ServiceName: analytics-rpc
   Mode: console
