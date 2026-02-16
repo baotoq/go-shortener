@@ -1,6 +1,8 @@
 package svc
 
 import (
+	"time"
+
 	"go-shortener/services/analytics-consumer/internal/config"
 	"go-shortener/services/analytics-rpc/model"
 
@@ -19,13 +21,22 @@ type ServiceContext struct {
 func NewServiceContext(c config.Config) *ServiceContext {
 	conn := sqlx.NewSqlConn("postgres", c.DataSource)
 
+	// Configure connection pool
+	db, err := conn.RawDB()
+	logx.Must(err)
+	db.SetMaxOpenConns(c.Pool.MaxOpenConns)
+	db.SetMaxIdleConns(c.Pool.MaxIdleConns)
+	db.SetConnMaxLifetime(time.Duration(c.Pool.ConnMaxLifetime) * time.Second)
+	logx.Infof("Connection pool configured: MaxOpen=%d, MaxIdle=%d, MaxLifetime=%ds",
+		c.Pool.MaxOpenConns, c.Pool.MaxIdleConns, c.Pool.ConnMaxLifetime)
+
 	var geoDB *geoip2.Reader
 	if c.GeoIPPath != "" {
-		db, err := geoip2.Open(c.GeoIPPath)
-		if err != nil {
+		gdb, geoErr := geoip2.Open(c.GeoIPPath)
+		if geoErr != nil {
 			logx.Infof("GeoIP database not available at %s, falling back to Unknown", c.GeoIPPath)
 		} else {
-			geoDB = db
+			geoDB = gdb
 		}
 	}
 

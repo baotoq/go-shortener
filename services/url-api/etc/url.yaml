@@ -19,6 +19,11 @@ BaseUrl: http://localhost:8080
 
 DataSource: postgres://postgres:postgres@localhost:5433/shortener?sslmode=disable
 
+Pool:
+  MaxOpenConns: 10
+  MaxIdleConns: 5
+  ConnMaxLifetime: 3600
+
 KqPusherConf:
   Brokers:
     - localhost:9092
