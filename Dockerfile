@@ -35,5 +35,5 @@ FROM alpine:3.20 AS analytics-consumer
 RUN apk add --no-cache ca-certificates tzdata
 COPY --from=builder /bin/analytics-consumer /bin/analytics-consumer
 COPY services/analytics-consumer/etc /etc/analytics-consumer
-EXPOSE 6472
+EXPOSE 6472 8082
 CMD ["/bin/analytics-consumer", "-f", "/etc/analytics-consumer/consumer-docker.yaml"]

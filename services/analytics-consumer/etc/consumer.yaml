@@ -29,3 +29,5 @@ KqConsumerConf:
   Processors: 4
 
 GeoIPPath: data/GeoLite2-Country.mmdb
+
+HealthCheckPort: 8082

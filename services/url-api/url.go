@@ -34,6 +34,16 @@ func main() {
 	ctx := svc.NewServiceContext(c)
 	handler.RegisterHandlers(server, ctx)
 
+	// Health check endpoint
+	server.AddRoute(rest.Route{
+		Method: http.MethodGet,
+		Path:   "/healthz",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("ok"))
+		}),
+	})
+
 	// Custom RFC 7807 error handler
 	// Note: go-zero's doHandleError checks if the returned body implements error,
 	// and if so writes it as plaintext. We return a problemDetailsBody (non-error)

@@ -78,6 +78,7 @@ services:
       target: analytics-consumer
     ports:
       - "6472:6472"
+      - "8082:8082"
     depends_on:
       postgres:
         condition: service_healthy

@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
 
 	"go-shortener/services/analytics-consumer/internal/config"
 	"go-shortener/services/analytics-consumer/internal/mqs"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/zeromicro/go-queue/kq"
 	"github.com/zeromicro/go-zero/core/conf"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/service"
 )
 
@@ -26,6 +28,20 @@ func main() {
 	c.MustSetUp()
 
 	svcCtx := svc.NewServiceContext(c)
+
+	// Start health check server
+	go func() {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("ok"))
+		})
+		addr := fmt.Sprintf(":%d", c.HealthCheckPort)
+		logx.Infof("Health check server listening on %s", addr)
+		if err := http.ListenAndServe(addr, mux); err != nil && err != http.ErrServerClosed {
+			logx.Errorf("Health server error: %v", err)
+		}
+	}()
 
 	group := service.NewServiceGroup()
 	defer group.Stop()

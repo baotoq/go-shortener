@@ -29,3 +29,5 @@ KqConsumerConf:
   Processors: 4
 
 GeoIPPath: ""
+
+HealthCheckPort: 8082
