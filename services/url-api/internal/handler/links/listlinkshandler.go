@@ -6,10 +6,11 @@ package links
 import (
 	"net/http"
 
-	"github.com/zeromicro/go-zero/rest/httpx"
 	"go-shortener/services/url-api/internal/logic/links"
 	"go-shortener/services/url-api/internal/svc"
 	"go-shortener/services/url-api/internal/types"
+
+	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 // List all links with pagination

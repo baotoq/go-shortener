@@ -6,10 +6,11 @@ package redirect
 import (
 	"net/http"
 
-	"github.com/zeromicro/go-zero/rest/httpx"
 	"go-shortener/services/url-api/internal/logic/redirect"
 	"go-shortener/services/url-api/internal/svc"
 	"go-shortener/services/url-api/internal/types"
+
+	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 // Redirect to original URL

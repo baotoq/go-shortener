@@ -9,12 +9,12 @@ import (
 
 // MockClicksModel is a test mock for ClicksModel interface.
 type MockClicksModel struct {
-	InsertFunc            func(ctx context.Context, data *Clicks) (sql.Result, error)
-	FindOneFunc           func(ctx context.Context, id string) (*Clicks, error)
-	UpdateFunc            func(ctx context.Context, data *Clicks) error
-	DeleteFunc            func(ctx context.Context, id string) error
-	CountByShortCodeFunc  func(ctx context.Context, shortCode string) (int64, error)
-	WithSessionFunc       func(session sqlx.Session) ClicksModel
+	InsertFunc           func(ctx context.Context, data *Clicks) (sql.Result, error)
+	FindOneFunc          func(ctx context.Context, id string) (*Clicks, error)
+	UpdateFunc           func(ctx context.Context, data *Clicks) error
+	DeleteFunc           func(ctx context.Context, id string) error
+	CountByShortCodeFunc func(ctx context.Context, shortCode string) (int64, error)
+	WithSessionFunc      func(session sqlx.Session) ClicksModel
 }
 
 // Ensure MockClicksModel implements ClicksModel interface

@@ -6,10 +6,10 @@ import (
 	"go-shortener/services/analytics-consumer/internal/config"
 	"go-shortener/services/analytics-rpc/model"
 
+	_ "github.com/lib/pq"
 	"github.com/oschwald/geoip2-golang"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
-	_ "github.com/lib/pq"
 )
 
 type ServiceContext struct {

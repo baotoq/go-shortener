@@ -10,11 +10,11 @@ import (
 	"go-shortener/services/url-api/internal/config"
 	"go-shortener/services/url-api/model"
 
+	_ "github.com/lib/pq"
 	"github.com/zeromicro/go-queue/kq"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	"github.com/zeromicro/go-zero/zrpc"
-	_ "github.com/lib/pq"
 )
 
 type ServiceContext struct {

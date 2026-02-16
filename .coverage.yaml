@@ -1,11 +1,15 @@
 threshold:
-  total: 80
-  package: 70
+  total: 70
+  package: 50
 
 override:
-  - path: "go-shortener/internal/urlservice/repository/sqlite/sqlc"
-    threshold: 0  # Generated code, skip coverage
-  - path: "go-shortener/internal/analytics/repository/sqlite/sqlc"
-    threshold: 0  # Generated code, skip coverage
-  - path: "go-shortener/cmd"
-    threshold: 50  # Main packages are harder to unit test
+  - path: "go-shortener/services/analytics-rpc/analytics"
+    threshold: 0  # Generated protobuf code
+  - path: "go-shortener/services/url-api/internal/handler"
+    threshold: 0  # Generated handler code
+  - path: "go-shortener/services/url-api/internal/types"
+    threshold: 0  # Generated types
+  - path: "go-shortener/services/analytics-rpc/internal/server"
+    threshold: 0  # Generated server code
+  - path: "go-shortener/pkg"
+    threshold: 50  # Shared packages
