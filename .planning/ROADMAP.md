@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** - Phases 1-6 (shipped 2026-02-15)
-- 🚧 **v2.0 Go-Zero Adoption** - Phases 7-10 (in progress)
+- 🚧 **v2.0 Go-Zero Adoption** - Phases 7-11 (in progress)
 
 ## Phases
 
@@ -89,14 +89,26 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 10-01-PLAN.md -- Resilience & Observability (Prometheus DevServer, circuit breakers, timeouts, load shedding config)
-- [ ] 10-02-PLAN.md -- Docker Compose Orchestration (Dockerfile, full-stack compose, Docker configs, Makefile targets)
-- [ ] 10-03-PLAN.md -- Test Coverage (mock models, unit tests for all logic/consumer, 80%+ coverage)
+- [x] 10-01-PLAN.md -- Resilience & Observability (Prometheus DevServer, circuit breakers, timeouts, load shedding config)
+- [x] 10-02-PLAN.md -- Docker Compose Orchestration (Dockerfile, full-stack compose, Docker configs, Makefile targets)
+- [x] 10-03-PLAN.md -- Test Coverage (mock models, unit tests for all logic/consumer, 80%+ coverage)
+
+#### Phase 11: CI Pipeline & Docker Hardening
+**Goal**: Fix CI pipeline for v2.0 structure, resolve Docker Kafka publishing, and harden production config
+**Depends on**: Phase 10
+**Requirements**: INFR-04, DBMG-03
+**Gap Closure**: Closes gaps from v2.0 milestone audit
+**Success Criteria** (what must be TRUE):
+  1. CI pipeline (`.github/workflows/ci.yml`) builds, lints, and tests v2.0 services successfully
+  2. Kafka publishing from url-api works in Docker Compose environment (click events reach analytics-consumer)
+  3. PostgreSQL connection pool explicitly configured (MaxOpenConns, MaxIdleConns, ConnMaxLifetime)
+  4. analytics-consumer healthz endpoint returns OK when consumer is connected to Kafka
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 7 → 8 → 9 → 10
+Phases execute in numeric order: 7 → 8 → 9 → 10 → 11
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -109,8 +121,9 @@ Phases execute in numeric order: 7 → 8 → 9 → 10
 | 7. Framework Foundation | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 8. Database Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 9. Messaging Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
-| 10. Resilience & Infrastructure | v2.0 | Complete    | 2026-02-16 | - |
+| 10. Resilience & Infrastructure | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
+| 11. CI Pipeline & Docker Hardening | v2.0 | 0/TBD | Pending | - |
 
 ---
 *Roadmap created: 2026-02-14*
-*Last updated: 2026-02-16 after Phase 10 planning complete*
+*Last updated: 2026-02-16 after gap closure phase added*
