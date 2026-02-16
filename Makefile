@@ -2,7 +2,7 @@
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: run-url run-analytics run-consumer gen-url gen-analytics gen-url-model gen-clicks-model run-all db-up db-down db-migrate kafka-up kafka-down
+.PHONY: run-url run-analytics run-consumer gen-url gen-analytics gen-url-model gen-clicks-model run-all db-up db-down db-migrate kafka-up kafka-down docker-build docker-up docker-down docker-logs test test-cover test-cover-html
 
 run-url: ## Run URL API service
 	go run services/url-api/url.go -f services/url-api/etc/url.yaml
@@ -49,3 +49,26 @@ gen-url-model: ## Generate URL model from PostgreSQL (requires db-up)
 
 gen-clicks-model: ## Generate clicks model from PostgreSQL (requires db-up)
 	goctl model pg datasource --url "postgres://postgres:postgres@localhost:5433/shortener?sslmode=disable" --table "clicks" --dir services/analytics-rpc/model --style gozero
+
+docker-build: ## Build Docker images for all services
+	docker compose build
+
+docker-up: ## Start all services in Docker
+	docker compose up -d
+
+docker-down: ## Stop all Docker services
+	docker compose down
+
+docker-logs: ## Follow logs for all Docker services
+	docker compose logs -f
+
+test: ## Run all tests
+	go test ./...
+
+test-cover: ## Run tests with coverage summary
+	go test -cover ./services/...
+
+test-cover-html: ## Generate HTML coverage report
+	go test -coverprofile=coverage.out ./services/...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report: coverage.html"
