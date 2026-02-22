@@ -69,10 +69,10 @@ Plans:
   2. A single URL redirect request produces a connected three-hop trace in Jaeger: HTTP redirect span → Kafka publish → consumer insert
   3. Visiting a short link shows the full trace chain visible in Jaeger with span links across the Kafka async boundary
   4. zRPC calls from url-api to analytics-rpc appear as child spans within the same trace tree
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 13-01: TBD
+- [ ] 13-01-PLAN.md — Jaeger infrastructure + Telemetry YAML config + Kafka context fix
 
 ### Phase 14: Log Aggregation
 **Goal**: All three services emit structured JSON logs that are collected by a log shipper and queryable in Loki
@@ -120,7 +120,7 @@ Plans:
 | 10. Resilience & Infrastructure | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 11. CI Pipeline & Docker Hardening | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 12. Tech Debt Cleanup | 2/2 | Complete    | 2026-02-22 | - |
-| 13. Distributed Tracing | v3.0 | 0/TBD | Not started | - |
+| 13. Distributed Tracing | v3.0 | 0/1 | Not started | - |
 | 14. Log Aggregation | v3.0 | 0/TBD | Not started | - |
 | 15. Metrics and Dashboards | v3.0 | 0/TBD | Not started | - |
 
