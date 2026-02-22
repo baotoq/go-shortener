@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 ## Current Position
 
 Phase: 12 of 15 (Tech Debt Cleanup)
-Plan: 2 of TBD in current phase
-Status: In progress
-Last activity: 2026-02-22 — completed 12-02 (analytics-consumer GeoIPReader interface + test coverage)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-02-22 — completed 12-01 (dead code removal + Kafka retention config)
 
 Progress: [█░░░░░░░░░] 10% (v3.0 phases)
 
@@ -49,6 +49,10 @@ Key v3.0 decisions from research:
 Key v3.0 decisions from 12-02:
 - GeoIPReader interface in svc package (co-located with ServiceContext) — interface-typed local var in NewServiceContext avoids typed-nil pitfall with concrete *geoip2.Reader
 
+Key v3.0 decisions from 12-01:
+- Removed IncrementClickCount from interface + impl + mock + test atomically to keep compile-time assertion valid
+- Kafka retention at broker level (24h time, 1GB size, 100MB segments) — applies to all auto-created topics including click-events
+
 ### Pending Todos
 
 None.
@@ -61,10 +65,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 12-02-PLAN.md (analytics-consumer GeoIPReader interface + test coverage)
+Stopped at: Completed 12-01-PLAN.md (dead code removal + Kafka retention)
 Resume file: None
-Next action: Continue Phase 12 plans
+Next action: Phase 12 complete — begin Phase 13 (Tracing)
 
 ---
 *Initialized: 2026-02-14*
-*Last updated: 2026-02-22 after 12-02 (analytics-consumer test coverage)*
+*Last updated: 2026-02-22 after 12-01 (dead code removal + Kafka retention — Phase 12 complete)*
