@@ -9,6 +9,7 @@ DevServer:
 Log:
   ServiceName: analytics-consumer
   Mode: console
+  Encoding: json
   Level: info
 
 Telemetry:
