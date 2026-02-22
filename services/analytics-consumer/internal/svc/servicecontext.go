@@ -1,6 +1,7 @@
 package svc
 
 import (
+	"net"
 	"time"
 
 	"go-shortener/services/analytics-consumer/internal/config"
@@ -12,10 +13,16 @@ import (
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
+// GeoIPReader abstracts country lookup for testability.
+// *geoip2.Reader naturally satisfies this interface.
+type GeoIPReader interface {
+	Country(ipAddress net.IP) (*geoip2.Country, error)
+}
+
 type ServiceContext struct {
 	Config     config.Config
 	ClickModel model.ClicksModel
-	GeoDB      *geoip2.Reader
+	GeoDB      GeoIPReader
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -30,7 +37,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	logx.Infof("Connection pool configured: MaxOpen=%d, MaxIdle=%d, MaxLifetime=%ds",
 		c.Pool.MaxOpenConns, c.Pool.MaxIdleConns, c.Pool.ConnMaxLifetime)
 
-	var geoDB *geoip2.Reader
+	var geoDB GeoIPReader
 	if c.GeoIPPath != "" {
 		gdb, geoErr := geoip2.Open(c.GeoIPPath)
 		if geoErr != nil {
