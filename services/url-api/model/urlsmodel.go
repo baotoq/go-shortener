@@ -17,7 +17,6 @@ type (
 		urlsModel
 		withSession(session sqlx.Session) UrlsModel
 		ListWithPagination(ctx context.Context, page, pageSize int, search, sort, order string) ([]*Urls, int64, error)
-		IncrementClickCount(ctx context.Context, shortCode string) error
 	}
 
 	customUrlsModel struct {
@@ -95,12 +94,4 @@ func (m *customUrlsModel) ListWithPagination(ctx context.Context, page, pageSize
 	}
 
 	return resp, totalCount, nil
-}
-
-// IncrementClickCount atomically increments the click_count for a given short code.
-// Uses SET click_count = click_count + 1 to avoid read-modify-write race conditions.
-func (m *customUrlsModel) IncrementClickCount(ctx context.Context, shortCode string) error {
-	query := fmt.Sprintf("UPDATE %s SET click_count = click_count + 1 WHERE short_code = $1", m.table)
-	_, err := m.conn.ExecCtx(ctx, query, shortCode)
-	return err
 }

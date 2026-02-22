@@ -9,14 +9,13 @@ import (
 
 // MockUrlsModel is a test mock for UrlsModel interface.
 type MockUrlsModel struct {
-	FindOneFunc             func(ctx context.Context, id string) (*Urls, error)
-	FindOneByShortCodeFunc  func(ctx context.Context, shortCode string) (*Urls, error)
-	InsertFunc              func(ctx context.Context, data *Urls) (sql.Result, error)
-	UpdateFunc              func(ctx context.Context, data *Urls) error
-	DeleteFunc              func(ctx context.Context, id string) error
-	ListWithPaginationFunc  func(ctx context.Context, page, pageSize int, search, sort, order string) ([]*Urls, int64, error)
-	IncrementClickCountFunc func(ctx context.Context, shortCode string) error
-	WithSessionFunc         func(session sqlx.Session) UrlsModel
+	FindOneFunc            func(ctx context.Context, id string) (*Urls, error)
+	FindOneByShortCodeFunc func(ctx context.Context, shortCode string) (*Urls, error)
+	InsertFunc             func(ctx context.Context, data *Urls) (sql.Result, error)
+	UpdateFunc             func(ctx context.Context, data *Urls) error
+	DeleteFunc             func(ctx context.Context, id string) error
+	ListWithPaginationFunc func(ctx context.Context, page, pageSize int, search, sort, order string) ([]*Urls, int64, error)
+	WithSessionFunc        func(session sqlx.Session) UrlsModel
 }
 
 // Ensure MockUrlsModel implements UrlsModel interface
@@ -62,13 +61,6 @@ func (m *MockUrlsModel) ListWithPagination(ctx context.Context, page, pageSize i
 		return m.ListWithPaginationFunc(ctx, page, pageSize, search, sort, order)
 	}
 	panic("MockUrlsModel.ListWithPaginationFunc not set")
-}
-
-func (m *MockUrlsModel) IncrementClickCount(ctx context.Context, shortCode string) error {
-	if m.IncrementClickCountFunc != nil {
-		return m.IncrementClickCountFunc(ctx, shortCode)
-	}
-	panic("MockUrlsModel.IncrementClickCountFunc not set")
 }
 
 func (m *MockUrlsModel) withSession(session sqlx.Session) UrlsModel {

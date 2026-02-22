@@ -74,12 +74,4 @@ func TestShortenIntegration(t *testing.T) {
 	foundByID, err := urlModel.FindOne(ctx, id.String())
 	require.NoError(t, err)
 	assert.Equal(t, "testcode", foundByID.ShortCode)
-
-	// Test: Increment click count
-	err = urlModel.IncrementClickCount(ctx, "testcode")
-	require.NoError(t, err)
-
-	updated, err := urlModel.FindOneByShortCode(ctx, "testcode")
-	require.NoError(t, err)
-	assert.Equal(t, int64(1), updated.ClickCount)
 }
