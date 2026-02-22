@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"net"
 	"testing"
 	"time"
 
@@ -13,9 +14,19 @@ import (
 	"go-shortener/services/analytics-consumer/internal/svc"
 	"go-shortener/services/analytics-rpc/model"
 
+	"github.com/oschwald/geoip2-golang"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// mockGeoIPReader implements svc.GeoIPReader for testing.
+type mockGeoIPReader struct {
+	countryFunc func(ip net.IP) (*geoip2.Country, error)
+}
+
+func (m *mockGeoIPReader) Country(ip net.IP) (*geoip2.Country, error) {
+	return m.countryFunc(ip)
+}
 
 func TestClickEventConsumer_Success(t *testing.T) {
 	var insertedClick *model.Clicks
@@ -301,4 +312,57 @@ func TestResolveCountry_InvalidIP(t *testing.T) {
 
 	result := resolveCountry(svcCtx, "not-an-ip")
 	assert.Equal(t, "XX", result, "should return XX for invalid IP")
+}
+
+func TestResolveCountry_WithGeoDB_Success(t *testing.T) {
+	mock := &mockGeoIPReader{
+		countryFunc: func(ip net.IP) (*geoip2.Country, error) {
+			c := &geoip2.Country{}
+			c.Country.IsoCode = "US"
+			return c, nil
+		},
+	}
+	svcCtx := &svc.ServiceContext{GeoDB: mock}
+	result := resolveCountry(svcCtx, "8.8.8.8")
+	assert.Equal(t, "US", result)
+}
+
+func TestResolveCountry_WithGeoDB_LookupError(t *testing.T) {
+	mock := &mockGeoIPReader{
+		countryFunc: func(ip net.IP) (*geoip2.Country, error) {
+			return nil, errors.New("lookup failed")
+		},
+	}
+	svcCtx := &svc.ServiceContext{GeoDB: mock}
+	result := resolveCountry(svcCtx, "8.8.8.8")
+	assert.Equal(t, "XX", result)
+}
+
+func TestResolveCountry_WithGeoDB_EmptyIsoCode(t *testing.T) {
+	mock := &mockGeoIPReader{
+		countryFunc: func(ip net.IP) (*geoip2.Country, error) {
+			return &geoip2.Country{}, nil
+		},
+	}
+	svcCtx := &svc.ServiceContext{GeoDB: mock}
+	result := resolveCountry(svcCtx, "8.8.8.8")
+	assert.Equal(t, "XX", result)
+}
+
+func TestResolveCountry_WithGeoDB_InvalidIP(t *testing.T) {
+	mock := &mockGeoIPReader{
+		countryFunc: func(ip net.IP) (*geoip2.Country, error) {
+			t.Fatal("Country should not be called for invalid IP")
+			return nil, nil
+		},
+	}
+	svcCtx := &svc.ServiceContext{GeoDB: mock}
+	result := resolveCountry(svcCtx, "not-an-ip")
+	assert.Equal(t, "XX", result)
+}
+
+func TestResolveDeviceType_Mobile(t *testing.T) {
+	// UA must contain "Mobile" token for mssola/useragent to detect it
+	result := resolveDeviceType("Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.86 Mobile Safari/537.36")
+	assert.Equal(t, "Mobile", result)
 }
