@@ -83,10 +83,10 @@ Plans:
   2. Loki container is running in Docker Compose and reachable at http://localhost:3100
   3. Log lines from all three services are queryable in Loki using `{service="url-api"}` style label selectors
   4. The log shipper (Alloy or Promtail) collects container logs and forwards them to Loki without manual intervention after `docker compose up`
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 14-01: TBD
+- [ ] 14-01-PLAN.md — Structured JSON logging config + Loki + Alloy Docker Compose setup
 
 ### Phase 15: Metrics and Dashboards
 **Goal**: Prometheus scrapes built-in go-zero metrics from all services and Grafana auto-provisions a working RED metrics dashboard on startup
@@ -121,7 +121,7 @@ Plans:
 | 11. CI Pipeline & Docker Hardening | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 12. Tech Debt Cleanup | 2/2 | Complete    | 2026-02-22 | - |
 | 13. Distributed Tracing | 1/1 | Complete    | 2026-02-22 | - |
-| 14. Log Aggregation | v3.0 | 0/TBD | Not started | - |
+| 14. Log Aggregation | v3.0 | 0/1 | Not started | - |
 | 15. Metrics and Dashboards | v3.0 | 0/TBD | Not started | - |
 
 ---
