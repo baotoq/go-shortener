@@ -120,7 +120,7 @@ Plans:
 | 10. Resilience & Infrastructure | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 11. CI Pipeline & Docker Hardening | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 12. Tech Debt Cleanup | 2/2 | Complete    | 2026-02-22 | - |
-| 13. Distributed Tracing | 1/1 | Complete   | 2026-02-22 | - |
+| 13. Distributed Tracing | 1/1 | Complete    | 2026-02-22 | - |
 | 14. Log Aggregation | v3.0 | 0/TBD | Not started | - |
 | 15. Metrics and Dashboards | v3.0 | 0/TBD | Not started | - |
 
