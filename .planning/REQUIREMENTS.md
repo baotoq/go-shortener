@@ -15,9 +15,9 @@ Requirements for production readiness milestone. Each maps to roadmap phases.
 
 ### Tracing
 
-- [ ] **TRACE-01**: Services emit OpenTelemetry traces via Telemetry YAML config (HTTP + zRPC auto-instrumented)
-- [ ] **TRACE-02**: Kafka click events propagate trace context across producer/consumer boundary
-- [ ] **TRACE-03**: Jaeger receives OTLP traces and provides trace visualization in Docker Compose
+- [x] **TRACE-01**: Services emit OpenTelemetry traces via Telemetry YAML config (HTTP + zRPC auto-instrumented)
+- [x] **TRACE-02**: Kafka click events propagate trace context across producer/consumer boundary
+- [x] **TRACE-03**: Jaeger receives OTLP traces and provides trace visualization in Docker Compose
 
 ### Logging
 
@@ -64,9 +64,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEBT-01 | Phase 12 | Complete |
 | DEBT-02 | Phase 12 | Complete |
 | DEBT-03 | Phase 12 | Complete |
-| TRACE-01 | Phase 13 | Pending |
-| TRACE-02 | Phase 13 | Pending |
-| TRACE-03 | Phase 13 | Pending |
+| TRACE-01 | Phase 13 | Complete |
+| TRACE-02 | Phase 13 | Complete |
+| TRACE-03 | Phase 13 | Complete |
 | LOG-01 | Phase 14 | Pending |
 | LOG-02 | Phase 14 | Pending |
 | LOG-03 | Phase 14 | Pending |
