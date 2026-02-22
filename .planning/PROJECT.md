@@ -8,6 +8,17 @@ A URL shortener built with Go and go-zero, structured as three microservices (ur
 
 Shorten a long URL and reliably redirect anyone who visits the short link. Everything else (analytics, events) is secondary to this working correctly.
 
+## Current Milestone: v3.0 Production Readiness
+
+**Goal:** Add full observability stack (tracing, metrics, dashboards) and service discovery to make the system production-ready.
+
+**Target features:**
+- Distributed tracing with OpenTelemetry and Jaeger across HTTP → Kafka → zRPC
+- Prometheus metrics with Grafana dashboards (latency, throughput, errors)
+- Etcd service discovery for zRPC replacing hardcoded DNS
+- Tech debt cleanup (dead code, coverage, Kafka retention, E2E test)
+- Full local stack via Docker Compose (Jaeger, Grafana, Etcd, Prometheus)
+
 ## Current State
 
 Shipped v2.0 — full stack rewrite from Chi/Dapr/SQLite to go-zero/zRPC/Kafka/PostgreSQL complete with feature parity.
@@ -40,7 +51,14 @@ Shipped v2.0 — full stack rewrite from Chi/Dapr/SQLite to go-zero/zRPC/Kafka/P
 
 ### Active
 
-(None — planning next milestone)
+- [ ] Distributed tracing across all three services with OpenTelemetry
+- [ ] Trace propagation through HTTP → Kafka → zRPC boundaries
+- [ ] Jaeger for trace visualization in Docker Compose
+- [ ] Prometheus metrics collection from go-zero services
+- [ ] Grafana dashboards for latency, throughput, and error rates
+- [ ] Etcd service discovery for zRPC (replace hardcoded DNS)
+- [ ] Tech debt: remove dead IncrementClickCount, improve consumer coverage
+- [ ] Tech debt: configure Kafka topic retention, add automated E2E test
 
 ### Out of Scope
 
@@ -95,4 +113,4 @@ Known tech debt: dead IncrementClickCount method, consumer coverage at 76.4%, no
 | testcontainers-go with pgx driver | Integration tests with real PostgreSQL | ✓ Good — catches schema/query issues early |
 
 ---
-*Last updated: 2026-02-22 after v2.0 milestone*
+*Last updated: 2026-02-22 after v3.0 milestone start*
