@@ -54,10 +54,11 @@ Full details: `.planning/milestones/v2.0-ROADMAP.md`
   1. `IncrementClickCount` method and any callers are gone from the codebase and `go build ./...` passes
   2. analytics-consumer test coverage is above 80% as reported by `go test -cover ./...`
   3. Kafka `click-events` topic has explicit retention settings in Docker Compose and does not grow unboundedly
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 12-01: TBD
+- [ ] 12-01-PLAN.md — Dead code removal (IncrementClickCount) + Kafka retention config
+- [ ] 12-02-PLAN.md — Consumer test coverage improvement (GeoIPReader interface + tests)
 
 ### Phase 13: Distributed Tracing
 **Goal**: All three services emit OpenTelemetry traces to Jaeger, including the async Kafka boundary between url-api and analytics-consumer
@@ -118,7 +119,7 @@ Plans:
 | 9. Messaging Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 10. Resilience & Infrastructure | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 11. CI Pipeline & Docker Hardening | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
-| 12. Tech Debt Cleanup | v3.0 | 0/TBD | Not started | - |
+| 12. Tech Debt Cleanup | v3.0 | 0/2 | Not started | - |
 | 13. Distributed Tracing | v3.0 | 0/TBD | Not started | - |
 | 14. Log Aggregation | v3.0 | 0/TBD | Not started | - |
 | 15. Metrics and Dashboards | v3.0 | 0/TBD | Not started | - |
