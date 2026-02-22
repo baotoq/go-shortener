@@ -1,177 +1,271 @@
-# Stack Research: go-zero Adoption
+# Stack Research
 
-**Domain:** Go microservices framework migration (Chi/Dapr/SQLite to go-zero/zRPC/Kafka/PostgreSQL)
-**Researched:** 2026-02-15
+**Domain:** Observability, tracing, metrics, and service discovery additions to go-zero microservices
+**Researched:** 2026-02-22
 **Confidence:** HIGH
 
-## Recommended Stack
+## Context: What Already Exists vs What Is New
 
-### Core Technologies
+This research covers **only the v3.0 additions**. The existing stack (go-zero v1.10.0, PostgreSQL, Kafka, zRPC) is validated and unchanged.
+
+### Critical Discovery: go-zero Built-in Telemetry
+
+**go-zero already ships all necessary OpenTelemetry and Prometheus instrumentation as indirect dependencies.** The `go.mod` already contains:
+
+- `go.opentelemetry.io/otel v1.35.0` (indirect, via go-zero)
+- `go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.24.0` (indirect)
+- `go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.24.0` (indirect)
+- `go.opentelemetry.io/otel/exporters/zipkin v1.24.0` (indirect)
+- `github.com/prometheus/client_golang v1.23.2` (indirect, via go-zero)
+- `go.etcd.io/etcd/client/v3 v3.5.15` (indirect, via go-zero)
+
+**No new Go library imports are required for tracing, metrics, or Etcd.** All activation is via YAML configuration and Docker infrastructure.
+
+---
+
+## Recommended Stack: New Infrastructure Only
+
+### Distributed Tracing: Jaeger v2
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| go-zero | v1.10.0 | Microservices framework with code generation | Industry-standard Go microservices framework with built-in service governance (rate limiting, circuit breaker, load shedding), OpenTelemetry tracing, and Prometheus metrics. Replaces Chi router + custom middleware entirely. Latest stable release (Feb 15, 2025) adds Go 1.23 support and bug fixes. |
-| goctl | v1.10.0 | Code generation CLI | Generates handler/logic/model code from `.api` specs and zRPC services from `.proto` files. v1.10.0 adds enhanced Swagger support and improved Docker generation. Use same version as go-zero framework. |
-| PostgreSQL | 13+ | Primary database | Production-grade relational DB replaces SQLite. go-zero sqlx requires PostgreSQL 13+ for full feature support. |
-| jackc/pgx/v5 | v5.8.0 | PostgreSQL driver (stdlib compatibility) | Recommended PostgreSQL driver for Go. Use stdlib wrapper (`pgx/v5/stdlib`) for go-zero sqlx compatibility. Native pgx is 70-150x faster than database/sql wrappers but go-zero sqlx requires database/sql interface. v5.8.0 supports Go 1.24 and PostgreSQL 13+. |
-| go-queue | v1.2.2 | Kafka/Beanstalkd pub/sub framework | go-zero's official queue abstraction wrapping segmentio/kafka-go. Provides unified API for Kafka producers/consumers with built-in error handling and retry. Latest stable (July 24, 2024). |
-| segmentio/kafka-go | v0.4.50 | Kafka client library | Pure Go Kafka library with no C dependencies. Used by go-queue under the hood. v0.4.50 (Jan 15, 2025) adds DescribeGroups v5 API and Kafka 4.0 support. |
+| Jaeger all-in-one | `jaegertracing/jaeger:2.15.0` | Trace visualization UI + OTLP receiver | Jaeger v2 is built on OpenTelemetry Collector core. Jaeger v1 reached EOL December 31, 2025. v2 natively accepts OTLP (ports 4317 gRPC, 4318 HTTP) and provides Jaeger UI on port 16686. Single container for local dev. |
+| go-zero Telemetry config | Built-in (no new package) | OTel trace export to Jaeger | go-zero's `Telemetry` YAML block activates the built-in OTel SDK. Use `Batcher: otlpgrpc` targeting Jaeger's OTLP gRPC port. The `jaeger` batcher option exists in older docs but the OTel jaeger exporter was deprecated in July 2023. Use `otlpgrpc` instead. |
 
-### Supporting Libraries
+**go-zero Telemetry config struct** (source: `core/trace/config.go`, verified from source):
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| google.golang.org/grpc | v1.78.0 | gRPC runtime | Required for zRPC. v1.78.0 (Feb 11, 2026) includes critical security enhancements (TLS, authentication). Automatically pulled by go-zero. |
-| google.golang.org/protobuf | v1.36+ | Protocol Buffers runtime | Required for `.proto` code generation. Use `protoc-gen-go@v1.28.0` and `protoc-gen-go-grpc@v1.3.0` for goctl compatibility. |
-| github.com/jaevor/go-nanoid | latest | Short code generation | Continue using existing NanoID library for 8-char short codes. go-zero doesn't provide ID generation. |
-| github.com/oschwald/geoip2-golang/v2 | v2.0+ | GeoIP country lookup | Continue using for analytics enrichment. v2.0 (56% fewer allocations, 34% less memory) now uses `netip.Addr` instead of `net.IP` for Go 1.24 alignment. |
+```go
+type Config struct {
+    Name           string            // service identifier in traces
+    Endpoint       string            // OTLP collector address (e.g., "jaeger:4317" for gRPC)
+    Sampler        float64           // default=1.0 (100% sampling)
+    Batcher        string            // default=otlpgrpc, options=zipkin|otlpgrpc|otlphttp|file
+    OtlpHeaders    map[string]string // optional custom headers
+    OtlpHttpPath   string            // optional, for otlphttp (e.g., "/v1/traces")
+    OtlpHttpSecure bool              // optional, TLS for otlphttp
+    Disabled       bool              // optional, disable tracing
+}
+```
 
-### Development Tools
+**Activation in each service YAML** (no code changes required for HTTP and zRPC):
 
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| goctl | Code generation from `.api` and `.proto` files | Install: `go install github.com/zeromicro/go-zero/tools/goctl@v1.10.0` |
-| protoc | Protocol Buffers compiler | Required for zRPC. Install via package manager or from protobuf releases. |
-| protoc-gen-go | Protobuf Go plugin | Install: `go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0` |
-| protoc-gen-go-grpc | gRPC Go plugin | Install: `go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0` |
-| Docker Compose | Local orchestration | PostgreSQL, Kafka, Zookeeper, URL Service, Analytics Service |
+```yaml
+Telemetry:
+  Name: url-api          # unique per service
+  Endpoint: jaeger:4317  # OTLP gRPC endpoint (no http:// prefix for gRPC)
+  Sampler: 1.0
+  Batcher: otlpgrpc
+```
+
+**Kafka trace propagation** requires manual context inject/extract. go-zero does NOT auto-propagate trace context through Kafka messages. The producer must inject W3C `traceparent` headers into Kafka message headers, and the consumer must extract them. Uses `otel.GetTextMapPropagator()` from the already-present OTel SDK.
+
+### Prometheus Metrics
+
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| prom/prometheus | `v3.9.1` | Metrics scraping and storage | Prometheus 3.x is the current stable series (v3.9.1 released 2026-01-07). Prometheus 2.x is no longer actively developed. |
+| go-zero DevServer | Built-in (no new package) | Metrics endpoint exposure | go-zero's `DevServer` block auto-exposes `/metrics` on a configurable port. Already configured in the project on ports 6470, 6471, 6472. Collects `http_server_requests_duration_ms` and `http_server_requests_code_total` automatically. |
+
+**DevServer already configured** in all three services. Prometheus only needs a `prometheus.yml` scrape config:
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: url-api
+    static_configs:
+      - targets: ['url-api:6470']
+  - job_name: analytics-rpc
+    static_configs:
+      - targets: ['analytics-rpc:6471']
+  - job_name: analytics-consumer
+    static_configs:
+      - targets: ['analytics-consumer:6472']
+```
+
+### Grafana Dashboards
+
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| grafana/grafana | `12.3.3` | Dashboard visualization | Latest stable (released 2026-02-12). Supports auto-provisioning datasources and dashboards from YAML/JSON files mounted into the container. No manual UI setup needed. |
+
+**Auto-provisioning pattern** (verified from Grafana official docs):
+
+```
+grafana/
+  provisioning/
+    datasources/
+      prometheus.yaml   # auto-registers Prometheus as default datasource
+    dashboards/
+      dashboard.yaml    # points to dashboard JSON directory
+  dashboards/
+    url-shortener.json  # pre-built dashboard JSON
+```
+
+### Etcd Service Discovery
+
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| gcr.io/etcd-development/etcd | `v3.5.27` | Service registry for zRPC | go-zero ships `go.etcd.io/etcd/client/v3 v3.5.15` as an indirect dep. etcd 3.5.x is the stable series (v3.5.27 is current). Use the official `gcr.io/etcd-development/etcd` image — `bitnami/etcd` is deprecated (moved to `bitnamilegacy`). |
+| go-zero EtcdConf | Built-in (no new package) | Client-side service discovery and server-side registration | go-zero's zRPC natively integrates with etcd. Server registers itself on startup; client resolves instances dynamically. Replaces hardcoded `dns:///localhost:8081`. |
+
+**Server registration** (analytics-rpc YAML change):
+
+```yaml
+# services/analytics-rpc/etc/analytics.yaml
+Name: analytics-rpc
+ListenOn: 0.0.0.0:8081
+Etcd:
+  Hosts:
+    - etcd:2379
+  Key: analytics-rpc
+```
+
+**Client discovery** (url-api YAML change):
+
+```yaml
+# services/url-api/etc/url.yaml
+AnalyticsRpc:
+  Etcd:
+    Hosts:
+      - etcd:2379
+    Key: analytics-rpc
+  NonBlock: true
+  Timeout: 2000
+```
+
+**No Go code changes needed** — go-zero's `zrpc.MustNewClient()` and `zrpc.MustNewServer()` detect the Etcd config and switch from direct connection to etcd-based discovery automatically.
+
+---
+
+## Supporting Libraries
+
+No new Go dependencies required. All libraries are already present as indirect dependencies of go-zero.
+
+| Library | Already Present | Role |
+|---------|----------------|------|
+| `go.opentelemetry.io/otel` | v1.35.0 indirect | OTel SDK core — activated by Telemetry YAML block |
+| `go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc` | v1.24.0 indirect | OTLP gRPC exporter — used when `Batcher: otlpgrpc` |
+| `go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp` | v1.24.0 indirect | OTLP HTTP exporter — used when `Batcher: otlphttp` |
+| `github.com/prometheus/client_golang` | v1.23.2 indirect | Prometheus metrics — used by go-zero DevServer |
+| `go.etcd.io/etcd/client/v3` | v3.5.15 indirect | Etcd client — used when EtcdConf is present in YAML |
+| `go.opentelemetry.io/otel/propagation` | indirect (via otel) | W3C TraceContext propagation — needed for manual Kafka inject/extract |
+
+**One exception:** Kafka trace propagation requires calling OTel propagation APIs directly in the producer/consumer code. The packages are already present in `go.mod` — no `go get` needed, but the imports must be added explicitly:
+
+```go
+import (
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/propagation"
+)
+```
+
+---
+
+## Development Tools: New Docker Compose Services
+
+| Service | Image | Ports | Purpose |
+|---------|-------|-------|---------|
+| Jaeger | `jaegertracing/jaeger:2.15.0` | 16686 (UI), 4317 (OTLP gRPC), 4318 (OTLP HTTP) | Trace visualization |
+| Prometheus | `prom/prometheus:v3.9.1` | 9090 | Metrics scraping and query |
+| Grafana | `grafana/grafana:12.3.3` | 3000 | Dashboards |
+| Etcd | `gcr.io/etcd-development/etcd:v3.5.27` | 2379 | Service registry |
+
+---
 
 ## Installation
 
+No Go package changes needed. All Go libraries activate via YAML config. New infrastructure containers added to `docker-compose.yml`.
+
 ```bash
-# Core framework and CLI
-go get github.com/zeromicro/go-zero@v1.10.0
-go install github.com/zeromicro/go-zero/tools/goctl@v1.10.0
+# Verify no new Go dependencies needed
+# go.mod already contains all required packages as indirect deps
+# of go-zero v1.10.0
 
-# Kafka integration
-go get github.com/zeromicro/go-queue@v1.2.2
-
-# PostgreSQL driver (stdlib wrapper for go-zero sqlx)
-go get github.com/jackc/pgx/v5@v5.8.0
-
-# zRPC/gRPC dependencies (auto-installed by go-zero, but pinned for consistency)
-go get google.golang.org/grpc@v1.78.0
-go get google.golang.org/protobuf@latest
-
-# Protobuf code generators
-go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
-
-# Existing libraries to KEEP
-go get github.com/jaevor/go-nanoid@latest
-go get github.com/oschwald/geoip2-golang/v2@latest
+# Infrastructure only — Docker Compose additions
+# jaeger, prometheus, grafana, etcd added to docker-compose.yml
 ```
+
+---
 
 ## Alternatives Considered
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| go-zero sqlx + goctl model | sqlc | Use sqlc if you need complex SQL queries with compile-time validation. go-zero sqlx generates basic CRUD + caching but doesn't validate SQL syntax at compile time. For this project, go-zero sqlx is sufficient (simple queries, framework integration). |
-| jackc/pgx/v5 (stdlib) | lib/pq | Never. lib/pq is deprecated and unmaintained. pgx is 70-150x faster and actively developed. |
-| go-queue (Kafka) | confluent-kafka-go | Use confluent-kafka-go if you need Confluent-specific features (Schema Registry, ksqlDB). go-queue is pure Go (no CGo), simpler, and integrates natively with go-zero. |
-| zRPC (gRPC) | Dapr service invocation | Use Dapr if multi-language polyglot services are required. For Go-only microservices, zRPC removes abstraction layer and provides better performance. |
-| PostgreSQL | SQLite | Use SQLite for single-writer, embedded scenarios. PostgreSQL removes single-writer limitation and provides production-grade features (replication, JSONB, full-text search). |
+| Recommended | Alternative | Why Not |
+|-------------|-------------|---------|
+| `Batcher: otlpgrpc` targeting Jaeger | `Batcher: jaeger` (legacy) | The OTel Jaeger exporter was deprecated July 2023 and removed from OTel Go. go-zero's `jaeger` batcher option wraps the deprecated exporter. Jaeger v2 natively accepts OTLP — send OTLP directly. |
+| Jaeger v2 (`jaegertracing/jaeger:2.15.0`) | Jaeger v1 (`jaegertracing/all-in-one`) | Jaeger v1 reached EOL December 31, 2025. v2 is built on OTel Collector core, natively accepts OTLP without translation overhead. |
+| `prom/prometheus:v3.9.1` | `prom/prometheus:v2.55.x` | Prometheus 3.x is the current major release (since November 2024). 2.x is in maintenance-only mode. |
+| `gcr.io/etcd-development/etcd:v3.5.27` | `bitnami/etcd` | Bitnami etcd image deprecated, moved to `bitnamilegacy/etcd`. Use official image. |
+| Grafana auto-provisioning (YAML files) | Manual Grafana UI setup | Auto-provisioning survives container restarts with zero manual steps. Mount `provisioning/` directory into the container. |
+| go-zero built-in OTel tracing | Custom OTel setup | go-zero activates full OTel SDK automatically via `Telemetry` YAML block. HTTP and zRPC traces are instrumented with zero code. Only Kafka requires manual propagation. |
+
+---
 
 ## What NOT to Use
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| Chi router | go-zero provides HTTP routing via `.api` specs | go-zero rest package with `.api` file definitions |
-| Dapr | Adds unnecessary abstraction layer when go-zero provides native zRPC + queue | go-zero zRPC for service calls, go-queue for events |
-| sqlc | Redundant when using go-zero sqlx model generation | goctl model for PostgreSQL code generation |
-| Custom middleware (rate limit, circuit breaker) | go-zero has built-in service governance | go-zero built-in features (configured via YAML) |
-| Zap logger | go-zero has built-in structured logging | go-zero logx package |
-| Manual Prometheus metrics | go-zero auto-exports metrics on port 6470 | go-zero built-in telemetry (custom metrics via core/metric) |
+| `go.opentelemetry.io/otel/exporters/jaeger` package | Removed from OTel Go in 2023. Dead package. | `otlptracegrpc` exporter targeting Jaeger's OTLP port 4317 |
+| `Batcher: jaeger` in go-zero Telemetry config | Uses the removed Jaeger exporter internally. May compile but targets Jaeger's deprecated Thrift HTTP collector (port 14268) which Jaeger v2 may drop. | `Batcher: otlpgrpc` with `Endpoint: jaeger:4317` |
+| `bitnami/etcd` Docker image | Deprecated, moved to `bitnamilegacy` namespace | `gcr.io/etcd-development/etcd:v3.5.27` |
+| Custom Prometheus middleware or metrics registration | go-zero DevServer already exposes `/metrics` on port 6470/6471/6472. Adding custom Prometheus setup creates duplicate metrics. | go-zero built-in DevServer (already configured in this project) |
+| OpenTelemetry Collector as intermediary | Adds a 5th infrastructure component with complex config. Unnecessary for local dev where Jaeger v2 natively accepts OTLP. | Send OTLP directly from go-zero services to Jaeger |
+| Zipkin as trace backend | No UI advantage over Jaeger for this use case; Jaeger is more widely adopted for Go microservices observability. | Jaeger |
 
-## Stack Patterns by Variant
+---
 
-**For HTTP API services (URL Service):**
-- Define routes in `.api` file with request/response types
-- Generate handler/logic/types with `goctl api go -api url.api -dir .`
-- Use go-zero sqlx models for database access
-- Enable built-in rate limiting, circuit breaker in service config YAML
-- Metrics auto-exported on `:6470/metrics`, health on `:6470/healthz`
+## Stack Patterns by Feature
 
-**For RPC services (Analytics Service):**
-- Define service in `.proto` file with request/response messages
-- Generate zRPC server/client with `goctl rpc protoc analytics.proto --go_out=. --go-grpc_out=. --zrpc_out=.`
-- Consume Kafka events via go-queue `kq.MustNewQueue()`
-- Call other services via generated zRPC clients
+**Distributed tracing (HTTP and zRPC):**
+- Add `Telemetry:` block to each service YAML
+- No code changes — go-zero's REST and zRPC middleware auto-instruments spans
+- go-zero's HTTP server creates a span per request; zRPC server and client propagate context via gRPC metadata
 
-**For async event consumers:**
-- Use go-queue `kq.MustNewQueue()` with consumer struct implementing `Consume(key, val string) error`
-- Configure via `KqConf` (brokers, group, topic, offset, consumers, processors)
-- go-queue handles deserialization, error handling, and retries
+**Kafka trace propagation (manual):**
+- Producer (url-api): Extract span from context, call `otel.GetTextMapPropagator().Inject(ctx, carrier)` where carrier writes to Kafka message headers
+- Consumer (analytics-consumer): Read Kafka headers, call `otel.GetTextMapPropagator().Extract(ctx, carrier)` to recover span context
+- Create child span from extracted context in consumer
 
-**For database access:**
-- Generate models from existing PostgreSQL database: `goctl model pg datasource -url="..." -table="..." -dir=./model`
-- Or define DDL and generate: Use MySQL DDL approach (PostgreSQL DDL generation not supported, requires live DB connection)
-- Models include CRUD operations, optional caching (Redis), and connection pooling
+**Etcd service discovery:**
+- Replace `Target: dns:///localhost:8081` with `Etcd:` block in url-api's `AnalyticsRpc` config
+- Add `Etcd:` block to analytics-rpc server config for registration
+- No Go code changes — zRPC client/server detect etcd config and switch resolvers automatically
+
+**Grafana dashboards:**
+- Pre-build dashboard JSON targeting go-zero's standard metric names:
+  - `http_server_requests_duration_ms_bucket` (latency histogram)
+  - `http_server_requests_code_total` (status codes by path)
+- Mount dashboard JSON into Grafana container via Docker volume at startup
+
+---
 
 ## Version Compatibility
 
-| Package | Compatible With | Notes |
-|---------|-----------------|-------|
-| go-zero@v1.10.0 | goctl@v1.10.0 | MUST match framework version |
-| goctl@v1.10.0 | protoc-gen-go@v1.28.0, protoc-gen-go-grpc@v1.3.0 | Recommended versions for zRPC generation |
-| go-queue@v1.2.2 | segmentio/kafka-go@v0.4.50 | go-queue wraps kafka-go, version mismatch unlikely to cause issues |
-| jackc/pgx/v5@v5.8.0 | PostgreSQL 13+ | Minimum PostgreSQL 13 for go-zero sqlx features |
-| google.golang.org/grpc@v1.78.0 | google.golang.org/protobuf@v1.36+ | Use matching major versions |
-| geoip2-golang/v2 | Go 1.24 | v2.0+ uses `netip.Addr` (Go 1.18+), v1.x uses deprecated `net.IP` |
+| Component | Version | Compatible With | Notes |
+|-----------|---------|-----------------|-------|
+| go-zero | v1.10.0 | OTel v1.35.0 (indirect dep) | Telemetry block activates OTel SDK already bundled |
+| go-zero Etcd client | v3.5.15 (indirect) | etcd server v3.5.27 | Client and server minor version mismatch is safe in etcd 3.5.x |
+| Jaeger | v2.15.0 | OTel OTLP | Jaeger v2 accepts OTLP gRPC on port 4317, OTLP HTTP on port 4318 |
+| Prometheus | v3.9.1 | go-zero DevServer `/metrics` | Prometheus scrapes go-zero's standard Prometheus exposition format |
+| Grafana | v12.3.3 | Prometheus v3.9.1 | Standard Prometheus datasource, fully compatible |
 
-## Integration with Existing Code
-
-### Keep Using (No Changes)
-
-| Library | Reason | Integration |
-|---------|--------|-------------|
-| github.com/jaevor/go-nanoid | go-zero doesn't provide ID generation | Call from logic layer when creating URLs |
-| github.com/oschwald/geoip2-golang/v2 | go-zero doesn't provide GeoIP | Inject into service context, use in analytics logic |
-| testcontainers-go | Testing strategy unchanged | Use for PostgreSQL and Kafka integration tests |
-
-### Replace Entirely
-
-| Old | New | Migration Path |
-|-----|-----|----------------|
-| Chi router | go-zero `.api` specs | Rewrite routes as `.api` file, regenerate with goctl |
-| Dapr pub/sub | go-queue (Kafka) | Replace Dapr publish with `kq.Pusher.Push()`, Dapr subscribe with `kq.MustNewQueue()` |
-| Dapr service invocation | zRPC clients | Define `.proto`, generate client, call via `client.Method(ctx, req)` |
-| sqlc | goctl model (PostgreSQL) | Generate models from live PostgreSQL connection or migrate DDL |
-| Custom middleware | go-zero built-in | Remove rate limiter, configure in service YAML |
-| pkg/problemdetails | go-zero error handling | Use go-zero `httpx.Error()` with custom error types |
-
-### Built-in Features (Replace Custom Code)
-
-| Feature | go-zero Built-in | Configuration |
-|---------|------------------|---------------|
-| Rate limiting | Yes (token bucket) | Service config YAML: `MaxConns`, `MaxBytes` |
-| Circuit breaker | Yes (Google SRE algorithm, 10s sliding window) | Automatic, no config needed |
-| Load shedding | Yes (adaptive) | Automatic based on CPU/memory |
-| Timeout control | Yes (chained) | Service config YAML: `Timeout` |
-| Logging | Yes (logx package, structured JSON) | Service config YAML: `Log.Mode`, `Log.Level` |
-| Metrics | Yes (Prometheus on `:6470/metrics`) | Auto-enabled, custom metrics via `core/metric` |
-| Tracing | Yes (OpenTelemetry) | Service config YAML: `Telemetry.Name`, `Telemetry.Endpoint` |
-| Health checks | Yes (`/healthz` on `:6470`) | Auto-enabled |
+---
 
 ## Sources
 
-- [go-zero GitHub Releases](https://github.com/zeromicro/go-zero/releases) - v1.10.0 verified (Feb 15, 2025)
-- [goctl Installation](https://go-zero.dev/en/docs/tasks/installation/goctl) - Installation methods
-- [go-zero Kafka Integration](https://go-zero.dev/en/docs/tutorials/message-queue/kafka) - go-queue usage
-- [go-queue GitHub](https://github.com/zeromicro/go-queue) - v1.2.2 verified (July 24, 2024)
-- [goctl RPC Documentation](https://go-zero.dev/en/docs/tutorials/cli/rpc) - zRPC code generation
-- [jackc/pgx v5 Docs](https://pkg.go.dev/github.com/jackc/pgx/v5) - v5.8.0 verified (Dec 26, 2025)
-- [segmentio/kafka-go Releases](https://github.com/segmentio/kafka-go/releases) - v0.4.50 verified (Jan 15, 2025)
-- [go-zero Monitoring](https://go-zero.dev/en/docs/tutorials/monitor/index) - Built-in telemetry features
-- [gRPC Quickstart](https://grpc.io/docs/languages/go/quickstart/) - protoc plugin versions
-- [go-zero API Syntax](https://go-zero.dev/en/docs/tasks/dsl/api) - `.api` file format
-- [goctl Model Generation](https://go-zero.dev/en/docs/tutorials/cli/model) - Database code generation
-- [go-zero Architecture Evolution](https://go-zero.dev/en/docs/concepts/architecture-evolution) - Handler/Logic/Model pattern
-- [go-zero Circuit Breaker](https://go-zero.dev/en/docs/tutorials/service/governance/breaker) - Built-in resilience
-- [Go Database Patterns Comparison](https://dasroot.net/posts/2025/12/go-database-patterns-gorm-sqlx-pgx-compared/) - sqlx vs pgx performance
-- [oschwald/geoip2-golang GitHub](https://github.com/oschwald/geoip2-golang) - v2.0+ features
-- [gRPC-Go v1.78.0](https://grpc.io/docs/languages/go/quickstart/) - Security enhancements (Feb 11, 2026)
+- [go-zero core/trace/config.go](https://github.com/zeromicro/go-zero/blob/master/core/trace/config.go) — TelemetryConf struct fields and valid Batcher values (HIGH confidence, source verified)
+- [go-zero monitoring docs](https://go-zero.dev/en/docs/tutorials/monitor/index) — DevServer auto-metrics, Telemetry YAML config (HIGH confidence)
+- [go-zero gRPC client configuration](https://go-zero.dev/en/docs/tutorials/grpc/client/conn) — EtcdConf fields for service discovery (HIGH confidence)
+- [Jaeger Getting Started v1.76](https://www.jaegertracing.io/docs/1.76/getting-started/) — Jaeger all-in-one ports and OTLP config (HIGH confidence)
+- [Jaeger v2 CNCF announcement](https://www.cncf.io/blog/2024/11/12/jaeger-v2-released-opentelemetry-in-the-core/) — v2 architecture based on OTel Collector (HIGH confidence)
+- [OTel Jaeger exporter deprecation](https://opentelemetry.io/blog/2023/jaeger-exporter-collector-migration/) — Jaeger exporter removed July 2023 (HIGH confidence)
+- [Prometheus v3.9.1 release](https://github.com/prometheus/prometheus/releases/tag/v3.9.1) — v3.9.1 released 2026-01-07 (HIGH confidence)
+- [Grafana What's New v12.3](https://grafana.com/docs/grafana/latest/whatsnew/whats-new-in-v12-3/) — v12.3.3 latest stable Feb 2026 (HIGH confidence)
+- [Grafana Provisioning docs](https://grafana.com/docs/grafana/latest/administration/provisioning/) — auto-provisioning datasources and dashboards (HIGH confidence)
+- [etcd releases](https://github.com/etcd-io/etcd/releases/) — v3.5.27 latest 3.5.x (HIGH confidence)
+- [go-zero zRPC etcd discovery blog](https://community.ops.io/kevwan/implementing-service-discovery-for-microservices-5bcb) — YAML config examples for server and client (MEDIUM confidence)
+- [Uptrace go-zero OTel guide](https://uptrace.dev/guides/opentelemetry-go-zero) — Telemetry struct fields verification (MEDIUM confidence)
+- [OTel propagation package](https://pkg.go.dev/go.opentelemetry.io/otel/propagation) — W3C TraceContext propagation for Kafka (HIGH confidence)
 
 ---
-*Stack research for: go-zero microservices adoption*
-*Researched: 2026-02-15*
+*Stack research for: v3.0 observability + service discovery additions to go-zero microservices*
+*Researched: 2026-02-22*

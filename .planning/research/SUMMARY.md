@@ -1,334 +1,238 @@
 # Project Research Summary
 
-**Project:** go-shortener
-**Domain:** Go Microservices Framework Migration (Chi/Dapr/SQLite → go-zero/Kafka/PostgreSQL)
-**Researched:** 2026-02-15
+**Project:** go-shortener v3.0 — Production Readiness Milestone
+**Domain:** Observability, Service Discovery, and Tech Debt for go-zero Microservices
+**Researched:** 2026-02-22
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This project migrates an existing URL shortener microservices application from Chi/Dapr/SQLite stack to go-zero framework with Kafka and PostgreSQL. The current v1.0 implementation has proven Clean Architecture patterns (delivery/usecase/repository) that work well. The migration goal is to adopt go-zero's production-ready framework features — built-in rate limiting, circuit breakers, load shedding, observability, and code generation — while preserving the working business logic.
+This milestone adds production-readiness infrastructure to an existing, validated go-zero microservices system (url-api, analytics-rpc, analytics-consumer) running on PostgreSQL, Kafka, and Docker Compose. The critical finding across all four research areas is that go-zero already bundles OpenTelemetry, Prometheus client, and etcd client as transitive dependencies — no new Go packages are required. The entire observability stack is activated through YAML configuration changes, with the single exception of Kafka trace propagation which requires two code changes (inject in redirect logic, extract in consumer).
 
-The recommended approach is phased migration starting with framework adoption (API/RPC code generation, handler/logic/model separation) before attempting database or messaging migrations. Go-zero's Handler→Logic→Model pattern maps cleanly to the current delivery→usecase→repository pattern, but the framework enforces this through code generation rather than manual structure. Critical early decisions: commit to goctl-generated structure (don't fight the framework), establish .api/.proto discipline immediately (syntax errors block everything), and implement idempotency before Kafka cutover (Dapr→Kafka changes delivery semantics from at-most-once to at-least-once).
+The recommended approach is a four-phase execution ordered by infrastructure dependencies: (1) tech debt cleanup as a standalone warmup, (2) etcd service discovery which requires only YAML and Docker Compose changes, (3) distributed tracing including the Kafka boundary which is the most complex code change, and (4) Prometheus + Grafana which depends on metrics being exported before dashboards can be built. Jaeger v2 (`jaegertracing/jaeger:2.15.0`) accepts OTLP natively — the `Batcher: otlpgrpc` config targets it directly, bypassing the deprecated Jaeger exporter. Prometheus 3.x (`prom/prometheus:v3.9.1`) and Grafana 12.3.3 are the current stable releases.
 
-Key risk mitigation: Code generation can overwrite custom logic if developers edit generated files (critical pitfall #1). The architecture separates handler (generated, never edit) from logic (manual, safe to edit). Second major risk is SQLite→PostgreSQL migration losing data semantics due to SQLite's loose typing — audit and clean data before migration. Third risk is Kafka consumer rebalancing storms during deployment causing 30+ second processing stalls — configure session timeouts and use staggered deployments.
+The primary risks are silent failures that look like working configurations: using `Batcher: jaeger` emits no error but produces no traces, scraping the wrong Prometheus ports results in empty dashboards with no errors, and missing the `Telemetry` block from analytics-consumer YAML leaves the most important observability gap (Kafka-to-database pipeline) invisible. Each pitfall has a clear verification step that must be part of phase acceptance criteria. Cardinality explosion from using `short_code` as a Prometheus label is the only risk with HIGH recovery cost — it must be prevented by design, not fixed after the fact.
 
 ## Key Findings
 
 ### Recommended Stack
 
-Go-zero v1.10.0 (Feb 2025) provides a complete microservices framework with code generation (goctl), built-in resilience patterns, and integrated observability. The migration replaces Chi router with .api specs, Dapr pub/sub with go-queue (Kafka), and SQLite with PostgreSQL. Core value proposition: production patterns (circuit breaker, load shedding, metrics, tracing) are built-in and configuration-driven, eliminating custom implementations.
+The v3.0 stack adds four Docker Compose infrastructure services only. No new Go packages are needed. All Go libraries activate via YAML config — the OTel SDK, Prometheus client, and etcd client are already in the dependency graph as transitive dependencies of go-zero v1.10.0.
 
 **Core technologies:**
-- **go-zero v1.10.0**: Microservices framework with code generation — replaces Chi router, custom middleware, manual service governance. Built-in rate limiting (token bucket), adaptive circuit breaker (Google SRE algorithm), load shedding (CPU-based), Prometheus metrics, OpenTelemetry tracing.
-- **goctl v1.10.0**: Code generation CLI — generates handlers/routes/types from .api specs (HTTP services) and server/client stubs from .proto files (RPC services). Must match framework version exactly.
-- **PostgreSQL 13+**: Production database — replaces SQLite's single-writer limitation. go-zero sqlx requires PostgreSQL 13+ for full feature support. Use jackc/pgx/v5 stdlib wrapper for compatibility with go-zero's sqlx-based model generation.
-- **go-queue v1.2.2**: Kafka pub/sub framework — go-zero's official queue abstraction. Provides kq.Pusher (producer) and kq.Queue (consumer) with built-in error handling, retry, and consumer group management. Replaces Dapr pub/sub.
-- **Keep existing libraries**: NanoID (short code generation), geoip2-golang v2 (analytics enrichment) — go-zero doesn't provide these, domain logic unchanged.
 
-**Replace entirely:**
-- Chi router → .api specs (declarative routing)
-- Dapr pub/sub → go-queue (Kafka-native)
-- sqlc → goctl model (PostgreSQL code generation)
-- Custom middleware → go-zero built-in (rate limit, logging, metrics)
+- **Jaeger v2 (`jaegertracing/jaeger:2.15.0`):** Distributed trace backend — Jaeger v1 reached EOL December 31, 2025; v2 is built on OTel Collector core and natively accepts OTLP on port 4317 (gRPC) and 4318 (HTTP). Single container for local dev.
+- **go-zero `Telemetry` YAML block (built-in, no new package):** Activates the OTel SDK already bundled as a transitive dep; auto-instruments HTTP handlers and gRPC calls with zero code changes. Use `Batcher: otlpgrpc`, never `Batcher: jaeger` (removed from OTel Go in 2023).
+- **Prometheus 3.x (`prom/prometheus:v3.9.1`):** Metrics scraping and storage — v3.x is current stable (released 2026-01-07); v2.x is maintenance-only. Scrapes go-zero DevServer endpoints already running at ports 6470/6471/6472.
+- **Grafana 12.3.3 (`grafana/grafana:12.3.3`):** Dashboard visualization — auto-provisioned from YAML/JSON files mounted at container start; no manual UI setup required. Dashboard 19909 on Grafana Labs covers go-zero's built-in HTTP/RPC metrics out of the box.
+- **etcd (`gcr.io/etcd-development/etcd:v3.5.27`):** Service registry for zRPC — go-zero's `RpcServerConf` and `RpcClientConf` natively embed `EtcdConf`; switching from `Target: dns:///localhost:8081` to etcd-based discovery requires only YAML changes and no Go code changes. Use official `gcr.io/etcd-development/etcd` image, not `bitnami/etcd` (deprecated).
+- **OTel propagation (built-in, already in go.mod):** W3C traceparent injection/extraction for Kafka boundary — packages are present as transitive deps; only explicit imports needed in redirect logic and consumer.
 
 ### Expected Features
 
-The migration focuses on framework capabilities, not application features. URL shortening logic (NanoID generation, redirect, analytics enrichment) remains unchanged — this is pure infrastructure migration.
+**Must have (table stakes — v3.0 core):**
 
-**Must have (framework features):**
-- **API Code Generation** — .api spec → handlers/routes/types. Core go-zero value, eliminates manual routing boilerplate.
-- **Handler/Logic/Model Separation** — go-zero enforces Clean Architecture automatically. Generated structure maps to current delivery/usecase/repository pattern.
-- **Automatic Request Validation** — Built-in via .api tags (range, optional, options). Replaces manual validation in handlers.
-- **Service Context (DI)** — Auto-generated dependency injection container. Holds DB, Redis, RPC clients, Kafka producers.
-- **Error Response Standardization** — Custom httpx.SetErrorHandler() integration preserves RFC 7807 Problem Details format.
+- Telemetry YAML block in all 3 service configs — enables HTTP and zRPC auto-tracing with one block per service; no code changes
+- Jaeger in Docker Compose — without it, traces are generated but never viewable
+- Kafka trace context propagation via `TraceContext` field in `ClickEvent` JSON — without it, the redirect → analytics pipeline is invisible in Jaeger as two disconnected traces
+- Prometheus in Docker Compose with `prometheus.yml` scrape config targeting DevServer ports 6470/6471/6472 (not the main service ports 8080/8081)
+- Grafana in Docker Compose with provisioned Prometheus datasource and pre-built go-zero dashboard (Grafana Labs ID 19909)
+- etcd in Docker Compose + analytics-rpc registration + url-api discovery — replaces hardcoded `Target: dns:///localhost:8081`
 
-**Should have (differentiators):**
-- **Built-in Rate Limiting** — CPU-based adaptive load shedding. Supplements existing per-IP rate limiter (behavioral change: protects service, not per-user quota).
-- **Adaptive Circuit Breaker** — Google SRE algorithm with 10-second sliding window. Protects Kafka and PostgreSQL calls, automatic recovery.
-- **Prometheus Metrics** — Auto-instrumented request duration histograms, status code counters on /metrics endpoint.
-- **Automatic Cache Layer** — goctl model -c generates Redis cache-aside pattern for primary key lookups. Use for short_code → URL lookups.
-- **zRPC Service Communication** — gRPC with service discovery, P2C load balancing. Optional (current Dapr pub/sub works for async events). Add only if synchronous service calls needed (e.g., analytics queries from url-service).
+**Should have (v3.0 enhancements, add after core is working):**
 
-**Defer (anti-features):**
-- **etcd Service Discovery** — Overkill for 2-service learning project. Use direct connection mode.
-- **Full OpenTelemetry Stack** — Requires Jaeger/Tempo backend. Enable TraceHandler middleware but defer production telemetry setup.
-- **Auto-generated Swagger** — Adds goctl-swagger plugin complexity. Skip for learning project.
+- Custom business metrics using `go-zero/core/metric` — CounterVec for redirects and URL creation events
+- Kafka topic retention configuration — explicit `KAFKA_LOG_RETENTION_HOURS` env var to prevent unbounded disk growth (known tech debt)
+- Dead code removal — delete `IncrementClickCount` from url model (~10 lines; replaced by Kafka consumer approach)
+- Consumer test coverage — unit tests for `resolveCountry`, `resolveDeviceType`, `resolveTrafficSource` enrichment helpers
+
+**Defer to future milestone (post v3.0):**
+
+- Automated E2E test via testcontainers-go — high complexity, warrants its own research phase
+- Prometheus alerting rules — operational value but not needed for a learning project milestone
+- Consumer-specific Grafana panels — dashboard 19909 covers HTTP/RPC; Kafka consumer metrics need custom panels
+
+**Anti-features to avoid:**
+
+- OpenTelemetry Collector as middleware layer — adds a 5th container with complex config; Jaeger v2 accepts OTLP directly
+- Consul for service discovery — requires third-party go-zero/contrib package; etcd is already in go.mod
+- Sampling rate below 1.0 in development — hides traces, makes debugging impossible during dev
+- Any Prometheus label using `short_code`, `url`, or IP — cardinality explosion with HIGH recovery cost (must DROP series, not just fix config)
 
 ### Architecture Approach
 
-Go-zero enforces 3-layer architecture: Handler (HTTP/gRPC I/O) → Logic (business logic) → Model (data access). ServiceContext provides dependency injection. This maps cleanly to the current delivery → usecase → repository pattern, but structure is code-generated rather than manual. Key difference: goctl-generated models don't enforce repository interfaces by default (methods are directly on structs), requiring wrapper layer for Clean Architecture compliance if desired.
+The v3.0 architecture is an additive overlay on the existing three-service system. The Handler → Logic → Model pattern, ServiceContext DI, and Docker Compose structure are unchanged. Four new Docker Compose services (etcd, Jaeger, Prometheus, Grafana) and a new `infra/` directory are the primary structural additions. The most architecturally significant decision is Kafka trace propagation: because `kq.Pusher` does not expose Kafka message headers for external manipulation, the W3C `traceparent` value is embedded as a `TraceContext string` field in the `ClickEvent` JSON payload. The consumer extracts this and creates a span link (not parent-child) to the producer span — span links correctly represent the async Kafka relationship.
 
-**Major components:**
-1. **URL Service (API)** — HTTP REST service defined in .api spec. Handles URL shortening, redirect, link management. Publishes ClickEvent to Kafka (fire-and-forget in goroutine). Generated with `goctl api go -api url.api -dir .`
-2. **Analytics RPC Service** — gRPC service defined in .proto spec. Exposes GetClickCount, GetAnalyticsSummary endpoints for synchronous queries from URL service (if needed). Generated with `goctl rpc protoc analytics.proto --go_out=. --go-grpc_out=. --zrpc_out=.`
-3. **Analytics Consumer** — Separate Kafka consumer binary. Implements kq.Queue.Consume(key, val) to process ClickEvent messages. Enriches with GeoIP/UA/Referer, stores to PostgreSQL. Runs independently from RPC service for scaling.
+**Major components and responsibilities:**
 
-**Data flows:**
-- **Shorten URL**: HTTP → Handler → Logic (validate, dedupe, insert) → Model → PostgreSQL → Response
-- **Redirect**: HTTP → Handler → Logic (find URL) → Model → PostgreSQL → 302 Redirect + goroutine(Kafka publish)
-- **Analytics Async**: Kafka → Consumer.Consume() → Enrich (GeoIP/UA/Referer) → Model.Insert() → PostgreSQL
-- **Analytics Sync (optional)**: URL Service → zRPC Client → Analytics RPC → PostgreSQL → Response
+1. **Jaeger (OTLP receiver + UI)** — receives traces from all three services via OTLP gRPC (port 4317); visualizes trace chains including span links across the Kafka boundary; UI at port 16686; all-in-one image for local dev only
+2. **Prometheus (metrics scraper + query engine)** — scrapes go-zero DevServer `/metrics` endpoints every 15s; stores time series for Grafana panels
+3. **Grafana (dashboard + provisioning)** — auto-provisions Prometheus datasource and go-zero dashboard on container start; all panels must use `histogram_quantile()`, never `avg()`; config committed to `infra/grafana/`
+4. **etcd (service registry)** — analytics-rpc registers on startup; url-api resolves analytics-rpc endpoint dynamically; replaces hardcoded DNS; use tmpfs (not named volume) to avoid permission issues
+5. **`infra/` directory (new)** — `infra/prometheus/prometheus.yml` and `infra/grafana/provisioning/` with datasource + dashboard YAML; dashboard JSON committed to version control for reproducibility
 
-**Migration mapping:**
-- delivery/http/ → handler/ (generated, minimal edits)
-- usecase/ → logic/ (manual business logic)
-- repository/sqlite/ → model/ (goctl-generated from PostgreSQL)
-- domain/ → split: DTOs in types/ (generated), entities in model/
-- Dapr pub/sub → kq.Pusher (producer) + kq.Queue (consumer)
+**Files changed in existing services:**
+
+| File | Change Type |
+|------|-------------|
+| `services/*/etc/*.yaml` | Config — add Telemetry block to all three; analytics-rpc and url-api add Etcd block |
+| `common/events/events.go` | Code — add `TraceContext string` field to ClickEvent |
+| `services/url-api/internal/logic/redirect/redirectlogic.go` | Code — inject traceparent into ClickEvent before Kafka push |
+| `services/analytics-consumer/internal/mqs/clickeventconsumer.go` | Code — extract traceparent, create span link in Consume() |
+| `docker-compose.yml` | New services — etcd, jaeger, prometheus, grafana; updated depends_on |
+| `infra/` (new) | New files — prometheus.yml, Grafana provisioning YAML, dashboard JSON |
+
+**No changes to:** Handler files, model files, generated code, ServiceContext struct.
 
 ### Critical Pitfalls
 
-**Top 5 pitfalls by severity:**
+1. **`Batcher: jaeger` produces silent failure** — go-zero's `StartAgent()` swallows the "unknown exporter" error into `logx.Error()` (not fatal); no traces appear and no crash occurs. Use `Batcher: otlpgrpc` with `Endpoint: jaeger:4317`. Verify by checking Jaeger UI shows all three services listed.
 
-1. **Code Generation Overwriting Custom Logic** — Developers edit generated handler files, re-run goctl, lose all work. **Avoid:** NEVER edit files with "DO NOT EDIT" header. Put ALL business logic in logic/*.go (safe-to-edit). Commit generated files to git immediately to track overwrites. (Phase 1)
+2. **Kafka trace context breaks silently without code changes** — Adding `Telemetry` YAML alone does NOT propagate traces through Kafka. The correct approach is embedding `TraceContext` in `ClickEvent` struct and manually calling `otel.GetTextMapPropagator().Inject()/Extract()`. Verify by checking Jaeger shows a three-hop connected trace: HTTP redirect → Kafka publish → consumer insert.
 
-2. **.api File Syntax Errors Blocking Generation** — Subtle .api DSL errors prevent goctl from generating code with cryptic errors. Common: multiple service declarations, service blocks in imported files, generics. **Avoid:** Run `goctl api validate --api <file>` after every edit. ONE service declaration per main .api file. NO service blocks in imports (types only). NO generics. (Phase 1)
+3. **analytics-consumer YAML missing `Telemetry` block leaves pipeline invisible** — `service.ServiceConf.SetUp()` only initializes the OTel SDK when `Telemetry.Endpoint` is non-empty; if the block is absent from both `consumer.yaml` and `consumer-docker.yaml`, no consumer spans are emitted. Additionally, consumer spans must be created manually in `Consume()` — there is no auto-instrumentation for Kafka consumers.
 
-3. **SQLite→PostgreSQL Data Semantics Loss** — SQLite's loose typing allows string in INTEGER column, date as text. PostgreSQL rejects on migration. Auto-increment behavior differs (SQLite reuses ROWID, PostgreSQL SERIAL never reuses). **Avoid:** Audit SQLite data BEFORE migration with `SELECT typeof(id), id FROM urls WHERE typeof(id) != 'integer'`. Clean corrupted data. Use pgloader for schema conversion (handles boolean 0/1 → true/false). Test on production-like data, not empty schema. (Phase 2)
+4. **Etcd startup race breaks Docker Compose cold start** — Without `depends_on: etcd: condition: service_healthy`, analytics-rpc can attempt registration before etcd's port 2379 is ready. Add a proper etcd healthcheck (`etcdctl endpoint health`) and set etcd as a healthy-condition dependency for analytics-rpc from the start.
 
-4. **Kafka Consumer Rebalancing Storms** — All consumer replicas restart simultaneously during deployment, triggering cascading rebalances. Processing stalls 30+ seconds. **Avoid:** Configure session timeout > max message processing time (increase from 10s to 30s+). Deploy with staggered restarts. Set kq Processors = partition count. Use incremental cooperative rebalancing (Kafka 2.4+). (Phase 3)
-
-5. **Dapr→Kafka Delivery Semantics Change** — Dapr in-memory pub/sub is at-most-once (drops on failure). Kafka is at-least-once (retries, redelivers). Analytics receives duplicate click events, inflating counts. **Avoid:** Design for idempotency before Kafka cutover. Use `{short_code}:{timestamp}:{ip}` as deduplication key in Redis (TTL = retention period). Accept duplicates, deduplicate at query time or use Redis INCR with SET NX for unique counts. (Phase 3)
-
-**Additional critical pitfalls:**
-- **ServiceContext Bloat** — Every dependency stuffed into ServiceContext (GeoIP, UA parser, NanoID). Becomes 500-line god object. **Avoid:** ServiceContext only for infrastructure (DB, Redis, RPC clients). Stateless utilities as functions, not services. (Phase 2)
-- **PostgreSQL Connection Pool Exhaustion** — Default settings don't match production. **Avoid:** Set MaxOpenConns = (CPU cores * 2) + 1, MaxIdleConns = MaxOpenConns / 2, ConnMaxLifetime = 5 minutes. Load test before deploy. (Phase 2)
-- **zRPC Protobuf Schema Evolution** — Field number changes/reuse break clients silently. **Avoid:** NEVER change/reuse field numbers. Mark deleted fields as `reserved`. Deploy server schema changes before client. (Phase 3)
+5. **Prometheus scraping wrong ports results in empty dashboards** — go-zero exposes metrics on DevServer ports (6470/6471/6472), not the main service port (8080/8081). Inside Docker Compose, `localhost` refers to the Prometheus container, not the host — use Docker service names (`url-api:6470`, not `localhost:6470`). Verify with Prometheus `Status > Targets` showing all three services as UP.
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure prioritizes framework foundation before infrastructure migration. Go-zero's code generation is foundational — all other features build on generated structure. Database and messaging migrations are high-risk, high-complexity changes that should come after framework patterns are proven.
+Based on the dependency analysis from ARCHITECTURE.md and the pitfall-to-phase mapping from PITFALLS.md, the research supports a four-phase execution ordered by infrastructure prerequisites.
 
-### Phase 1: Framework Foundation (go-zero Adoption)
-**Rationale:** Establish go-zero code generation, handler/logic/model separation, and ServiceContext patterns before attempting database or messaging migrations. This is the lowest-risk starting point — pure code reorganization with familiar patterns.
+### Phase 1: Tech Debt Cleanup
 
-**Delivers:**
-- .api specs for url-service (shorten, redirect, list links)
-- .proto spec for analytics-service (GetClickCount RPC)
-- Generated handlers, routes, types
-- Logic layer with migrated business logic
-- ServiceContext with existing dependencies (SQLite, NanoID, GeoIP)
-- RFC 7807 error handling via httpx.SetErrorHandler
+**Rationale:** No dependencies on v3.0 infrastructure; provides a clean baseline before adding observability. Low-risk, isolated changes that build confidence and reduce debugging surface area.
 
-**Addresses:**
-- API Code Generation (table stakes)
-- Handler/Logic/Model Separation (table stakes)
-- Service Context DI (table stakes)
-- Automatic Request Validation (table stakes)
+**Delivers:** Dead code removed (`IncrementClickCount`), consumer enrichment helpers unit tested, Kafka topic retention configured.
 
-**Avoids:**
-- Code generation overwriting custom logic (establish separation immediately)
-- .api syntax errors (validate before generation)
+**Addresses:** P2 features (dead code removal, consumer test coverage, Kafka retention config)
 
-**Needs research:** NO — go-zero patterns are well-documented, official examples exist. Standard migration.
+**Avoids:** No specific pitfalls, but a cleaner codebase reduces ambiguity when tracing is added in Phase 3.
 
----
+**Research flag:** Standard patterns — skip `/gsd:research-phase`. Delete method, verify no callers (`go build ./...`), add test cases for three helpers, add Docker Compose env var.
 
-### Phase 2: Database Migration (SQLite → PostgreSQL)
-**Rationale:** After framework patterns are proven, tackle database migration. This is high-complexity due to SQLite's loose typing requiring data audit. Separating from Phase 1 allows validation of go-zero patterns before introducing PostgreSQL complexity.
+### Phase 2: Infrastructure Setup and Etcd Service Discovery
 
-**Delivers:**
-- PostgreSQL schema (migrated from SQLite with pgloader)
-- goctl-generated models (replace sqlc)
-- Audited and cleaned data migration
-- Connection pool configuration (MaxOpenConns, MaxIdleConns)
-- Repository wrapper layer (if Clean Architecture interfaces desired)
+**Rationale:** All new Docker Compose services must be in place before any service configuration changes. Etcd is pure YAML + Docker Compose with no Go code changes — lowest risk observability feature. Adding Jaeger and Prometheus containers here also enables Phase 3 verification without requiring a separate Docker Compose change.
 
-**Uses:**
-- PostgreSQL 13+ (from STACK.md)
-- jackc/pgx/v5 stdlib wrapper (from STACK.md)
-- goctl model pg datasource (from STACK.md)
+**Delivers:** etcd running in Docker Compose with healthcheck and tmpfs volume; analytics-rpc registers on startup; url-api discovers analytics-rpc via etcd resolver; Jaeger, Prometheus, Grafana containers running (empty but ready); `infra/` directory structure created with placeholder configs.
 
-**Implements:**
-- Model layer (data access component from ARCHITECTURE.md)
+**Addresses:** Etcd service discovery (P1), infrastructure foundation for all subsequent phases
 
 **Avoids:**
-- SQLite data semantics loss (audit before migration)
-- PostgreSQL connection pool exhaustion (configure pools during setup)
-- ServiceContext bloat (establish boundaries: infrastructure only)
+- Etcd startup race — add healthcheck from the start (PITFALL 8)
+- Etcd volume permission denied — use tmpfs, never named volume (PITFALL 9)
+- Breaking graceful degradation — verify link detail still returns 0 clicks when analytics-rpc is stopped
 
-**Needs research:** MEDIUM — pgloader configuration, data type mapping, foreign key enforcement. Phase-specific research recommended.
+**Research flag:** Standard patterns — skip `/gsd:research-phase`. go-zero etcd YAML config fields confirmed in STACK.md. Docker Compose healthcheck patterns are standard.
 
----
+### Phase 3: Distributed Tracing
 
-### Phase 3: Messaging Migration (Dapr → Kafka)
-**Rationale:** After database is stable, migrate messaging. This is high-risk due to delivery semantics change (at-most-once → at-least-once). Kafka requires idempotency design that Dapr didn't need. Separate from database migration to isolate risk.
+**Rationale:** Jaeger must be running (added in Phase 2) before Telemetry configs point to it. OTel SDK must be initialized (via Telemetry block) before Kafka manual propagation code can call `otel.GetTextMapPropagator()`. This is the only phase requiring non-trivial Go code changes — isolating it after infrastructure is stable reduces debugging ambiguity.
 
-**Delivers:**
-- go-queue Kafka producer (kq.Pusher) in URL service
-- go-queue Kafka consumer (kq.Queue) in analytics-service
-- Kafka topic configuration (retention, replication, partitions)
-- Idempotency logic (Redis deduplication)
-- Consumer graceful shutdown (drain in-flight messages)
+**Delivers:** All three services emit traces to Jaeger; full three-hop trace visible in Jaeger (HTTP redirect → Kafka → consumer insert); `ClickEvent` struct has `TraceContext` field; manual span creation in consumer `Consume()` using span links.
 
-**Uses:**
-- go-queue v1.2.2 (from STACK.md)
-- segmentio/kafka-go v0.4.50 (from STACK.md)
-
-**Implements:**
-- Kafka Pub/Sub pattern (from ARCHITECTURE.md)
-- Event flow: URL Service → Kafka → Analytics Consumer (from ARCHITECTURE.md)
+**Addresses:** Telemetry YAML config (P1), Kafka trace propagation (P1), end-to-end trace chain
 
 **Avoids:**
-- Kafka consumer rebalancing storms (configure session timeouts, staggered deploys)
-- Dapr→Kafka delivery semantics change (implement idempotency first)
-- Kafka topic misconfiguration (7-day retention, replication factor 2)
-- Message loss (acks=all for critical events)
+- Wrong Batcher value — use `otlpgrpc` not `jaeger` (PITFALL 2)
+- Kafka trace broken — embed `TraceContext` in ClickEvent JSON; verify with Jaeger three-hop trace (PITFALL 1)
+- Consumer YAML missing Telemetry block — add to both `consumer.yaml` and `consumer-docker.yaml` (PITFALL 3)
+- Consumer relying on auto-instrumentation — add explicit `tracer.Start()` in `Consume()`
 
-**Needs research:** MEDIUM — Kafka topic sizing, consumer group configuration, idempotency patterns. Phase-specific research recommended.
+**Research flag:** The Kafka propagation via `TraceContext` JSON field should be smoke-tested as acceptance criteria. PITFALLS.md notes that go-queue's consumer-side `startConsumers()` already extracts OTel from Kafka headers — if this is confirmed, the consumer may already receive valid span context in the `ctx` argument to `Consume()`, making JSON extraction redundant. Verify during implementation to choose the simpler approach.
 
----
+### Phase 4: Prometheus Metrics and Grafana Dashboards
 
-### Phase 4: Resilience & Observability (Production Hardening)
-**Rationale:** After core infrastructure migration is complete and stable, enable go-zero's built-in production features. These are low-cost, configuration-driven enhancements. Deferring until foundation is stable allows focus on migration risks first.
+**Rationale:** Prometheus must scrape before Grafana dashboards have data to display. Building dashboards last ensures all metrics are visible and queries can be verified during dashboard construction. Custom business metrics are added here after built-in go-zero metrics are confirmed working.
 
-**Delivers:**
-- Prometheus metrics on /metrics endpoint
-- Request timeout control (prevent hanging requests)
-- MaxConns limiting (prevent resource exhaustion)
-- Adaptive load shedding (CPU-based rate limiting)
-- Adaptive circuit breaker (protect Kafka and PostgreSQL)
-- OpenTelemetry tracing (dev-only, no backend)
+**Delivers:** `prometheus.yml` scrape config targeting DevServer ports; all three services show UP in Prometheus Status > Targets; Grafana provisioned with Prometheus datasource; go-zero dashboard (Grafana Labs 19909) loaded automatically; all latency panels use `histogram_quantile(0.99)` not `avg()`.
 
-**Addresses:**
-- Built-in Rate Limiting (differentiator)
-- Adaptive Circuit Breaker (differentiator)
-- Prometheus Metrics (differentiator)
+**Addresses:** Prometheus Docker Compose (P1), Grafana provisioning (P1), go-zero dashboard (P1), custom business metrics (P2)
 
 **Avoids:**
-- Rate limiting per-instance (migrate to Redis-based global limiter)
-- No authentication on zRPC (add interceptors if RPC exposed)
+- Scraping wrong ports — use DevServer ports 6470/6471/6472 not 8080/8081 (PITFALL 10)
+- Metrics disabled — verify `curl :6470/metrics | grep http_server` returns data before building dashboards (PITFALL 6)
+- Cardinality explosion — never use `short_code`, `url`, or IP as Prometheus label; code-review all custom metric labels (PITFALL 5)
+- Grafana using `avg()` for latency — all panels must use `histogram_quantile()`, RED method (PITFALL 7)
+- Grafana datasource using `localhost:9090` instead of `prometheus:9090`
 
-**Needs research:** NO — go-zero's built-in features are well-documented. Configuration-driven, no custom code.
-
----
-
-### Phase 5: Optional Enhancements (Future Consideration)
-**Rationale:** Features that provide value but aren't essential for migration completion. Evaluate based on project goals after Phase 4 stability.
-
-**Delivers:**
-- Automatic cache layer (goctl model -c with Redis)
-- Concurrent request deduplication (singleflight for redirect hot paths)
-- zRPC service communication (if synchronous analytics queries needed)
-- Service discovery (etcd, if scaling beyond 2 services)
-
-**Deferred because:**
-- Current architecture works (Dapr pub/sub meets async event requirements)
-- High complexity relative to value (cache layer requires full repository rewrite)
-- Not required for migration goal (framework adoption complete in Phase 4)
-
----
+**Research flag:** Standard patterns — skip `/gsd:research-phase`. Prometheus scrape config and Grafana provisioning are well-documented. Verify that go-zero dashboard 19909 metric names match what go-zero v1.10.0 actually exports from DevServer.
 
 ### Phase Ordering Rationale
 
-**Why framework first (Phase 1):**
-- Go-zero's code generation is foundational — all features build on generated structure
-- Lowest risk — code reorganization with no infrastructure changes
-- Validates framework patterns before tackling database/messaging complexity
-- Critical pitfalls (code generation discipline, .api syntax) must be addressed immediately
+- **Tech debt first** — zero dependencies on new infrastructure; clean baseline before adding complexity.
+- **Etcd second** — YAML-only changes, establishes Docker Compose expansion pattern, and the infrastructure containers added here (Jaeger, Prometheus) are prerequisites for Phase 3 verification without requiring a separate PR.
+- **Tracing third** — requires Jaeger running (from Phase 2) and is the only phase with meaningful Go code changes; isolating it after infrastructure is stable reduces debugging ambiguity.
+- **Metrics/dashboards last** — requires Prometheus scraping data before dashboards are meaningful; building dashboards before metrics are confirmed working wastes effort.
 
-**Why database before messaging (Phase 2 before 3):**
-- Database migration is data-preserving operation (audit, clean, migrate)
-- Kafka migration changes delivery semantics (requires idempotency design)
-- Separating allows isolated risk — if PostgreSQL migration fails, rollback without Kafka complexity
-- Connection pooling and model generation patterns inform Kafka consumer setup
-
-**Why resilience deferred to Phase 4:**
-- Low-cost, configuration-driven features (no migration risk)
-- Deferring allows focus on high-risk migrations (database, messaging) first
-- Built-in features work best once infrastructure is stable
-- Observability needs stable baseline to measure against
-
-**How this avoids pitfalls:**
-- Phase boundaries align with critical pitfall prevention phases (from PITFALLS.md mapping)
-- Early phases address irreversible mistakes (code generation, .api syntax, data semantics)
-- Later phases address operational issues (rebalancing, connection pools, observability)
-- Staggered approach prevents compounding failures (PostgreSQL + Kafka migration simultaneously)
+This ordering follows ARCHITECTURE.md's explicit build-order recommendation and maps each phase's deliverable to the next phase's prerequisite.
 
 ### Research Flags
 
-**Phases needing deeper research during planning:**
-- **Phase 2 (Database Migration):** pgloader configuration, SQLite type affinity audit queries, PostgreSQL schema conversion patterns, foreign key migration. Niche domain, needs `/gsd:research-phase` for data migration specifics.
-- **Phase 3 (Kafka Integration):** Topic sizing calculations, consumer group configuration, idempotency pattern selection, rebalancing strategy tuning. Complex integration, needs phase research for production configuration.
+Phases needing deeper research during planning:
+- **Phase 3 (Distributed Tracing):** Verify whether go-queue's consumer-side `startConsumers()` already extracts OTel context from Kafka headers into the `ctx` argument passed to `Consume()`. If confirmed, the consumer-side code change may be simpler than expected (just `tracer.Start(ctx, ...)`, no manual extraction). Investigate during execution; if issues arise with the JSON field approach, fall back to using `segmentio/kafka-go` producer directly for header-level injection.
 
-**Phases with standard patterns (skip research-phase):**
-- **Phase 1 (Framework Foundation):** Well-documented go-zero patterns, official tutorials exist, clear migration path from Chi/Dapr. Standard HTTP/RPC code generation.
-- **Phase 4 (Resilience):** Configuration-driven built-in features, go-zero docs cover all aspects. No custom implementation needed.
-- **Phase 5 (Optional):** Standard patterns (caching, service discovery), well-documented. Only research if actually implementing.
+Phases with standard patterns (skip research-phase):
+- **Phase 1 (Tech Debt):** Dead code deletion, test addition, env var — no research needed.
+- **Phase 2 (Etcd):** go-zero etcd YAML config documented and confirmed against source. Docker Compose healthcheck patterns are standard.
+- **Phase 4 (Prometheus + Grafana):** Scrape config and Grafana provisioning are well-documented. Standard RED method dashboard patterns.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Official go-zero v1.10.0 release verified (Feb 15, 2025). GitHub releases, official docs, version compatibility matrix validated. PostgreSQL, Kafka, pgx versions cross-checked with go-zero requirements. |
-| Features | MEDIUM | Framework features verified via official go-zero docs. Migration complexity estimates based on current codebase analysis. Application features unchanged (NanoID, GeoIP, redirect logic). Lower confidence on effort estimates for goctl model migration (no direct sqlc→goctl migration guide found). |
-| Architecture | HIGH | Go-zero's Handler→Logic→Model pattern well-documented with official examples. Monorepo structure validated via community articles and go.work patterns. Current v1.0 codebase analyzed to confirm mapping (delivery→handler, usecase→logic, repository→model). Kafka consumer separation pattern verified in go-queue docs. |
-| Pitfalls | MEDIUM | Critical pitfalls sourced from official go-zero issues (GitHub), Kafka rebalancing guides, PostgreSQL migration articles. Code generation pitfalls verified via framework docs and community reports. Lower confidence on SQLite data corruption frequency (no statistics found, based on SQLite type affinity behavior). |
+| Stack | HIGH | All technology choices verified against official sources and go.mod. Version numbers confirmed against release notes. Key insight (no new Go deps needed) verified by direct go.mod analysis. Bitnami etcd deprecation confirmed. Jaeger v1 EOL confirmed. |
+| Features | HIGH | go-zero built-in metrics and instrumentation boundaries confirmed against go-zero v1.10.0 source. Feature prioritization is clear given the project context. go-zero built-in metric names verified. |
+| Architecture | HIGH (HTTP/gRPC/etcd), MEDIUM (Kafka propagation) | go-zero Telemetry and etcd integration confirmed against source code. Kafka trace propagation via JSON field is inferred from `kq.Pusher` source inspection — JSON field is a reasonable workaround that should be verified with a smoke test during Phase 3. |
+| Pitfalls | HIGH | Critical pitfalls verified against go-zero v1.10.0 and go-queue v1.2.2 source code. Recovery strategies and warning signs are specific and actionable. |
 
 **Overall confidence:** HIGH
 
-Research is comprehensive for framework migration path (Stack, Architecture). Feature migration is straightforward (business logic unchanged). Moderate uncertainty on data migration complexity (Phase 2) and Kafka tuning (Phase 3) — phase-specific research will address these gaps.
-
 ### Gaps to Address
 
-**Data migration validation (Phase 2):**
-- No direct sqlc→goctl model migration guide found. Need to research query compatibility, generated code differences, and repository interface preservation strategies during Phase 2 planning.
-- SQLite data audit queries are generic. Need to inspect actual schema (urls, clicks tables) to identify type affinity risks specific to this project during execution.
-- pgloader configuration for go-shortener schema needs testing on snapshot data before production migration.
+- **Kafka propagation smoke test:** Before marking Phase 3 complete, verify end-to-end trace chain in Jaeger (HTTP redirect → Kafka → consumer) shows as a connected trace. If broken, debug with `Batcher: file` to log exported spans locally.
 
-**Kafka production configuration (Phase 3):**
-- Topic sizing (partitions, retention) depends on production traffic patterns not specified in research. Need metrics from current Dapr deployment to inform Kafka configuration.
-- Idempotency key selection (`{short_code}:{timestamp}:{ip}`) is proposed but not validated. Need to confirm this prevents duplicates without false positives during Phase 3 planning.
-- Consumer rebalancing impact depends on deployment frequency and replica count. Need production deployment patterns to configure session timeouts appropriately.
+- **go-queue consumer-side OTel extraction:** PITFALLS.md source analysis notes that go-queue's `startConsumers()` already calls `otel.GetTextMapPropagator().Extract()` from Kafka headers (via `kq/internal/trace.go`). If this is correct, the consumer already receives valid span context in `ctx`. Verify during Phase 3 implementation — if confirmed, only the producer-side `TraceContext` injection may be needed, simplifying consumer changes.
 
-**Performance baselines (Phase 4):**
-- No current performance metrics (request latency, throughput, resource usage) found in research. Need to establish baseline with Chi/Dapr stack before migration to measure go-zero impact.
-- Rate limiting behavioral change (per-IP → CPU-based adaptive) may require hybrid approach (keep per-IP + add adaptive). Need user quota requirements to validate.
+- **Grafana dashboard 19909 metric name compatibility:** Dashboard 19909 on Grafana Labs was built for a specific version of go-zero's metric names. Verify that `http_server_requests_duration_ms` and related names match what go-zero v1.10.0 actually exports from DevServer before relying on this dashboard JSON. If names differ, edit the panel queries.
 
-**How to handle during planning/execution:**
-- Phase 2: Run `/gsd:research-phase` for PostgreSQL migration specifics (pgloader config, data audit queries, goctl model patterns)
-- Phase 3: Run `/gsd:research-phase` for Kafka production configuration (topic sizing, consumer tuning, idempotency validation)
-- Phase 4: Establish performance testing plan in execution doc, capture Chi/Dapr baseline metrics before migration
-- All phases: Use .planning/STATE.md to track discoveries and decisions as gaps are resolved
+- **Jaeger span links UX:** Verify that Jaeger 2.15.0 UI displays span links in a discoverable way. If the async Kafka relationship is not clearly visible, add a note to the project README explaining how to navigate from HTTP redirect trace to consumer trace in Jaeger.
 
 ## Sources
 
 ### Primary (HIGH confidence)
 
-**Stack research:**
-- [go-zero GitHub Releases](https://github.com/zeromicro/go-zero/releases) — v1.10.0 verified (Feb 15, 2025)
-- [goctl Installation](https://go-zero.dev/en/docs/tasks/installation/goctl) — Installation methods
-- [go-zero Kafka Integration](https://go-zero.dev/en/docs/tutorials/message-queue/kafka) — go-queue usage
-- [jackc/pgx v5 Docs](https://pkg.go.dev/github.com/jackc/pgx/v5) — v5.8.0 verified (Dec 26, 2025)
-- [goctl Model Generation](https://go-zero.dev/en/docs/tutorials/cli/model) — Database code generation
-
-**Architecture research:**
-- [Project Structure | go-zero Documentation](https://go-zero.dev/en/docs/concepts/layout) — Official project layout
-- [Framework Overview | go-zero Documentation](https://go-zero.dev/en/docs/concepts/overview) — Architecture and components
-- [API Syntax | go-zero Documentation](https://go-zero.dev/en/docs/tasks/dsl/api) — .api file DSL specification
-- [goctl RPC | go-zero Documentation](https://go-zero.dev/en/docs/tutorials/cli/rpc) — RPC service generation
-- [GitHub - zeromicro/go-queue](https://github.com/zeromicro/go-queue) — Official Kafka integration
+- go-zero source code (v1.10.0): `core/trace/config.go`, `core/trace/agent.go`, `core/service/serviceconf.go`, `internal/devserver/server.go` — Telemetry config fields, Batcher options, OTel initialization lifecycle
+- go-queue source code (v1.2.2): `kq/pusher.go`, `kq/queue.go`, `kq/internal/trace.go` — Push vs KPush behavior, consumer OTel extraction
+- [go-zero monitoring docs](https://go-zero.dev/en/docs/tutorials/monitor/index) — DevServer metrics, built-in metric names
+- [go-zero gRPC client configuration](https://go-zero.dev/en/docs/tutorials/grpc/client/conn) — EtcdConf fields
+- [go-zero Service Configuration](https://go-zero.dev/en/docs/tutorials/grpc/server/configuration) — RpcServerConf Etcd fields
+- [go-zero Discovery docs](https://zeromicro.github.io/go-zero.dev/en/docs/component/discovery/) — Etcd registration/discovery lifecycle
+- [Jaeger Getting Started v1.76](https://www.jaegertracing.io/docs/1.76/getting-started/) — OTLP ports and all-in-one configuration
+- [Jaeger v2 CNCF announcement](https://www.cncf.io/blog/2024/11/12/jaeger-v2-released-opentelemetry-in-the-core/) — v2 architecture based on OTel Collector
+- [OTel Jaeger exporter deprecation](https://opentelemetry.io/blog/2023/jaeger-exporter-collector-migration/) — Jaeger exporter removed July 2023
+- [Prometheus v3.9.1 release](https://github.com/prometheus/prometheus/releases/tag/v3.9.1) — current stable version
+- [Grafana Provisioning docs](https://grafana.com/docs/grafana/latest/administration/provisioning/) — datasource and dashboard auto-provisioning
+- [etcd releases](https://github.com/etcd-io/etcd/releases/) — v3.5.27 current 3.5.x
+- Direct `go.mod` analysis — confirmed OTel, Prometheus client, and etcd client already in dependency graph
+- [OTel propagation package](https://pkg.go.dev/go.opentelemetry.io/otel/propagation) — W3C TraceContext propagation API
 
 ### Secondary (MEDIUM confidence)
 
-**Features research:**
-- [Middleware | go-zero Documentation](https://go-zero.dev/en/docs/tutorials/http/server/middleware) — Service governance features
-- [Circuit Breaker | go-zero](https://zeromicro.github.io/go-zero.dev/en/docs/component/breaker/) — Resilience patterns
-- [Cache Management | go-zero Documentation](https://go-zero.dev/en/docs/tutorials/mysql/cache) — Auto-caching with goctl model -c
-- [Parameter Rules | go-zero Documentation](https://go-zero.dev/en/docs/tutorials/api/parameter) — .api validation tags
-
-**Pitfalls research:**
-- [How to migrate from SQLite to PostgreSQL](https://render.com/articles/how-to-migrate-from-sqlite-to-postgresql) — Data semantics, type affinity
-- [Kafka Rebalancing: Triggers, Effects, and Mitigation](https://www.redpanda.com/guides/kafka-performance-kafka-rebalancing) — Consumer rebalancing strategies
-- [Protocol Buffers Schema Evolution Guide](https://jstontoable.org/blog/protobuf/protobuf-schema-evolution) — Protobuf compatibility rules
-- [How to Implement Connection Pooling in Go for PostgreSQL](https://oneuptime.com/blog/post/2026-01-07-go-postgresql-connection-pooling/view) — Pool configuration
+- [Uptrace go-zero OTel guide](https://uptrace.dev/guides/opentelemetry-go-zero) — Telemetry struct fields verification
+- [go-zero zRPC etcd discovery blog](https://community.ops.io/kevwan/implementing-service-discovery-for-microservices-5bcb) — YAML config examples for server and client
+- [How to Propagate Trace Context Across Kafka Producers and Consumers](https://oneuptime.com/blog/post/2026-02-06-propagate-trace-context-kafka-producers-consumers/view) — Kafka header propagation pattern
+- [Kafka with OpenTelemetry | Last9](https://last9.io/blog/kafka-with-opentelemetry/) — span link pattern for async boundaries
+- [Go-Zero | Grafana Labs (Dashboard 19909)](https://grafana.com/grafana/dashboards/19909-go-zero/) — pre-built dashboard availability
+- [Grafana dashboard best practices](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/best-practices/) — RED method, histogram_quantile usage
+- [Prometheus cardinality management | Grafana Labs](https://grafana.com/blog/how-to-manage-high-cardinality-metrics-in-prometheus-and-kubernetes/) — cardinality explosion prevention
 
 ### Tertiary (LOW confidence)
 
-- [I've Tried Many Go Frameworks. Here's Why I Finally Chose This One](https://medium.com/@g.zhufuyi/ive-tried-many-go-frameworks-here-s-why-i-finally-chose-this-one-a73ad2636a50) — Framework comparison (opinion piece, not authoritative)
-- Community articles on ServiceContext patterns (not official docs, needs validation)
+- [etcd data_dir permission denied | coreos/bugs](https://github.com/coreos/bugs/issues/2446) — tmpfs workaround for volume permissions (workaround confirmed, edge case)
 
 ---
-*Research completed: 2026-02-15*
+*Research completed: 2026-02-22*
 *Ready for roadmap: yes*
