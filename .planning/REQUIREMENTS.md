@@ -21,9 +21,9 @@ Requirements for production readiness milestone. Each maps to roadmap phases.
 
 ### Logging
 
-- [ ] **LOG-01**: Services emit structured JSON logs via go-zero logx
-- [ ] **LOG-02**: Loki aggregates logs from all three services in Docker Compose
-- [ ] **LOG-03**: Log shipper (Alloy/Promtail) collects container logs and forwards to Loki
+- [x] **LOG-01**: Services emit structured JSON logs via go-zero logx
+- [x] **LOG-02**: Loki aggregates logs from all three services in Docker Compose
+- [x] **LOG-03**: Log shipper (Alloy/Promtail) collects container logs and forwards to Loki
 
 ### Metrics & Dashboards
 
@@ -67,9 +67,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRACE-01 | Phase 13 | Complete |
 | TRACE-02 | Phase 13 | Complete |
 | TRACE-03 | Phase 13 | Complete |
-| LOG-01 | Phase 14 | Pending |
-| LOG-02 | Phase 14 | Pending |
-| LOG-03 | Phase 14 | Pending |
+| LOG-01 | Phase 14 | Complete |
+| LOG-02 | Phase 14 | Complete |
+| LOG-03 | Phase 14 | Complete |
 | METRICS-01 | Phase 15 | Pending |
 | METRICS-02 | Phase 15 | Pending |
 | METRICS-03 | Phase 15 | Pending |

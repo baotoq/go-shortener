@@ -41,7 +41,7 @@ Full details: `.planning/milestones/v2.0-ROADMAP.md`
 
 - [x] **Phase 12: Tech Debt Cleanup** - Remove dead code, harden consumer test coverage, configure Kafka retention (completed 2026-02-22)
 - [x] **Phase 13: Distributed Tracing** - OpenTelemetry traces across all three services with Jaeger visualization (completed 2026-02-22)
-- [ ] **Phase 14: Log Aggregation** - Loki + log shipper collecting structured JSON logs from all services
+- [x] **Phase 14: Log Aggregation** - Loki + log shipper collecting structured JSON logs from all services (completed 2026-02-22)
 - [ ] **Phase 15: Metrics and Dashboards** - Prometheus scraping + Grafana auto-provisioned with RED metrics dashboard
 
 ## Phase Details
@@ -121,7 +121,7 @@ Plans:
 | 11. CI Pipeline & Docker Hardening | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 12. Tech Debt Cleanup | 2/2 | Complete    | 2026-02-22 | - |
 | 13. Distributed Tracing | 1/1 | Complete    | 2026-02-22 | - |
-| 14. Log Aggregation | v3.0 | 0/1 | Not started | - |
+| 14. Log Aggregation | 1/1 | Complete   | 2026-02-22 | - |
 | 15. Metrics and Dashboards | v3.0 | 0/TBD | Not started | - |
 
 ---

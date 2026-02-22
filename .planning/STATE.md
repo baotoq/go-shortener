@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Shorten a long URL and reliably redirect anyone who visits the short link
-**Current focus:** v3.0 Production Readiness — Phase 13: Distributed Tracing
+**Current focus:** v3.0 Production Readiness — Phase 14: Log Aggregation
 
 ## Current Position
 
-Phase: 13 of 15 (Distributed Tracing)
+Phase: 14 of 15 (Log Aggregation)
 Plan: 1 of 1 in current phase
 Status: Phase complete
-Last activity: 2026-02-22 — completed 13-01 (Jaeger + OTel Telemetry config + Kafka context fix)
+Last activity: 2026-02-22 — completed 14-01 (Loki + Alloy log aggregation infrastructure)
 
-Progress: [██░░░░░░░░] 20% (v3.0 phases)
+Progress: [███░░░░░░░] 30% (v3.0 phases)
 
 ## Performance Metrics
 
@@ -30,6 +30,7 @@ Progress: [██░░░░░░░░] 20% (v3.0 phases)
 | v1.0 (1-6) | 18 | - | - |
 | v2.0 (7-11) | 15 | ~3330s | ~222s |
 | v3.0 Phase 13 P01 | 153s | 2 tasks | 8 files |
+| v3.0 Phase 14 P01 | 2min | 2 tasks | 9 files |
 
 *Updated after each plan completion*
 
@@ -56,6 +57,7 @@ Key v3.0 decisions from 12-01:
 - [Phase 13-01]: Use Batcher: otlpgrpc (not jaeger) — Jaeger exporter removed from OTel Go SDK in 2023; Jaeger v1.76 accepts OTLP natively on port 4317
 - [Phase 13-01]: No OTel Collector needed — Jaeger v1.76 accepts OTLP directly on port 4317, eliminating infrastructure complexity
 - [Phase 13-01]: Kafka trace propagation via go-queue header injection (not JSON ClickEvent field) — go-queue v1.2.2 already implements W3C traceparent header propagation natively
+- [Phase 14-log-aggregation]: Loki 3.0 requires tsdb store + schema v13; Alloy (not promtail) for Docker container log collection; service label from Docker Compose metadata label
 
 ### Pending Todos
 
@@ -68,10 +70,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 13-01-PLAN.md (distributed tracing infrastructure — Jaeger + OTel Telemetry config + Kafka context fix)
+Stopped at: Completed 14-01-PLAN.md (Loki + Alloy log aggregation infrastructure)
 Resume file: None
-Next action: Phase 13 complete — begin Phase 14
+Next action: Phase 14 complete — begin Phase 15 (Metrics)
 
 ---
 *Initialized: 2026-02-14*
-*Last updated: 2026-02-22 after 13-01 (distributed tracing — Phase 13 complete)*
+*Last updated: 2026-02-22 after 14-01 (log aggregation — Phase 14 complete)*
