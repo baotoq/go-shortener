@@ -2,23 +2,15 @@
 
 ## What This Is
 
-A URL shortener built with Go and go-zero, structured as two microservices communicating via zRPC (gRPC) and Kafka. Supports URL shortening with redirect, event-driven click analytics with geo/device/referer enrichment, and link management with pagination and search. Rebuilt on go-zero's framework with PostgreSQL, Kafka, and code generation.
+A URL shortener built with Go and go-zero, structured as three microservices (url-api, analytics-rpc, analytics-consumer) communicating via zRPC (gRPC) and Kafka. Supports URL shortening with redirect, event-driven click analytics with geo/device/referer enrichment, and link management with pagination and search. Built on go-zero's code generation, PostgreSQL, and Kafka.
 
 ## Core Value
 
 Shorten a long URL and reliably redirect anyone who visits the short link. Everything else (analytics, events) is secondary to this working correctly.
 
-## Current Milestone: v2.0 Go-Zero Adoption
+## Current State
 
-**Goal:** Full stack rewrite from Chi/Dapr/SQLite to go-zero/zRPC/Kafka/PostgreSQL with feature parity.
-
-**Target features:**
-- Rebuild both services using go-zero handler → logic → model pattern with `.api` spec code generation
-- Replace Dapr service invocation with zRPC (gRPC/protobuf)
-- Replace Dapr pub/sub with Kafka via go-zero queue
-- Migrate from SQLite + sqlc to PostgreSQL + go-zero sqlx
-- Maintain all v1.0 features (shorten, redirect, analytics, link management)
-- Docker Compose orchestration with PostgreSQL, Kafka, and both services
+Shipped v2.0 — full stack rewrite from Chi/Dapr/SQLite to go-zero/zRPC/Kafka/PostgreSQL complete with feature parity.
 
 ## Requirements
 
@@ -38,16 +30,17 @@ Shorten a long URL and reliably redirect anyone who visits the short link. Every
 - ✓ Integration tests with real Dapr sidecars — v1.0
 - ✓ CI pipeline (lint, test, build) in GitHub Actions — v1.0
 - ✓ Rate limiting prevents abuse (100 req/min per IP) — v1.0
+- ✓ Rebuild URL Service with go-zero .api spec and code generation — v2.0
+- ✓ Rebuild Analytics Service with go-zero .proto spec and zRPC generation — v2.0
+- ✓ Replace Dapr service invocation with zRPC (gRPC/protobuf) — v2.0
+- ✓ Replace Dapr pub/sub with Kafka via go-zero queue — v2.0
+- ✓ Migrate from SQLite to PostgreSQL with go-zero sqlx — v2.0
+- ✓ Docker Compose with PostgreSQL, Kafka, and all three services — v2.0
+- ✓ Maintain feature parity with v1.0 (shorten, redirect, analytics, link management) — v2.0
 
 ### Active
 
-- [ ] Rebuild URL Service with go-zero `.api` spec and code generation
-- [ ] Rebuild Analytics Service with go-zero `.api` spec and code generation
-- [ ] Replace Dapr service invocation with zRPC (gRPC/protobuf)
-- [ ] Replace Dapr pub/sub with Kafka via go-zero queue
-- [ ] Migrate from SQLite to PostgreSQL with go-zero sqlx
-- [ ] Docker Compose with PostgreSQL, Kafka, Zookeeper, and both services
-- [ ] Maintain feature parity with v1.0 (shorten, redirect, analytics, link management)
+(None — planning next milestone)
 
 ### Out of Scope
 
@@ -55,24 +48,23 @@ Shorten a long URL and reliably redirect anyone who visits the short link. Every
 - User accounts / authentication — not needed for learning goals
 - Custom aliases — keeping short codes auto-generated
 - Link expiration — adds complexity without teaching new patterns
-- Redis caching — defer to future milestone
 - Service mesh / Kubernetes — Docker Compose for now
+- ~~KRaft Kafka (no Zookeeper)~~ Implemented in v2.0 (KRaft mode, no Zookeeper)
 
 ## Context
 
-Shipped v1.0 with 9,401 LOC Go across 56 files.
-v2.0 is a full stack rewrite: go-zero replaces Chi + Dapr entirely.
-Go-zero provides: `.api` spec code generation, zRPC (gRPC), built-in middleware (rate limiting, circuit breaker, load shedding), Kafka queue integration, sqlx for database access.
-Two services preserved: **URL Service** (HTTP API) and **Analytics Service** (zRPC + Kafka consumer).
-PostgreSQL replaces SQLite for production-grade storage.
-Kafka replaces Dapr's in-memory pub/sub for reliable event delivery.
+Shipped v2.0 with 3,425 LOC Go (full rewrite: 11,139 added / 11,181 removed).
+Tech stack: go-zero, PostgreSQL 16, Kafka (KRaft), zRPC (gRPC/protobuf), Docker Compose.
+Three services: **url-api** (HTTP REST), **analytics-rpc** (zRPC server), **analytics-consumer** (Kafka consumer).
+CI: GitHub Actions with golangci-lint v2, unit tests, testcontainers-go integration tests.
+Known tech debt: dead IncrementClickCount method, consumer coverage at 76.4%, no automated E2E test.
 
 ## Constraints
 
 - **Language**: Go — the entire point of the project
 - **Framework**: go-zero — learning its conventions, code generation, and patterns
 - **Database**: PostgreSQL — production-grade relational database
-- **Events**: Kafka — reliable async event pipeline via go-zero queue
+- **Events**: Kafka (KRaft mode) — reliable async event pipeline via go-zero queue
 - **Service comms**: zRPC (gRPC/protobuf) — go-zero's native RPC framework
 - **Deployment**: Docker Compose to orchestrate services + infrastructure
 
@@ -86,15 +78,21 @@ Kafka replaces Dapr's in-memory pub/sub for reliable event delivery.
 | Clean architecture | Learn production Go patterns (layered, testable, swappable) | ✓ Good — enabled 80%+ coverage with mock injection |
 | sqlc for type-safe SQL | Compile-time safety with full SQL control | ✓ Good — caught schema drift at build time |
 | Chi router | Idiomatic Go, good middleware support | ✓ Good — clean route groups, middleware ordering |
-| RFC 7807 Problem Details | Standardized API error responses | ✓ Good — consistent error format across services |
+| RFC 7807 Problem Details | Standardized API error responses | ✓ Good — consistent error format, preserved across v2.0 |
 | NanoID 8-char codes | ~218 trillion combinations, collision retry | ✓ Good — no collisions in practice |
-| Fire-and-forget pub/sub | User never blocked by analytics | ✓ Good — redirect latency unaffected |
-| DaprClient interface wrapper | Testability without mocking 40-method SDK interface | ✓ Good — enabled publishClickEvent and service invocation tests |
-| testcontainers-go for integration | Real Docker containers, not mocks | ✓ Good — catches real Dapr issues |
-| go-zero full adoption (v2.0) | Learn go-zero framework patterns, code generation, built-in tooling | — Pending |
-| Drop Dapr for go-zero native | go-zero provides zRPC + queue natively, Dapr adds unnecessary layer | — Pending |
-| PostgreSQL over SQLite | Production-grade, removes single-writer limitation | — Pending |
-| Kafka for events | Reliable, persistent event pipeline via go-zero queue integration | — Pending |
+| Fire-and-forget pub/sub | User never blocked by analytics | ✓ Good — redirect latency unaffected, preserved in Kafka migration |
+| DaprClient interface wrapper | Testability without mocking 40-method SDK interface | ✓ Good — replaced by go-zero native patterns in v2.0 |
+| testcontainers-go for integration | Real Docker containers, not mocks | ✓ Good — catches real issues, extended with PostgreSQL in v2.0 |
+| go-zero full adoption (v2.0) | Learn go-zero framework patterns, code generation, built-in tooling | ✓ Good — .api/.proto code gen, built-in middleware, clean DI |
+| Drop Dapr for go-zero native | go-zero provides zRPC + queue natively, Dapr adds unnecessary layer | ✓ Good — simpler architecture, fewer moving parts |
+| PostgreSQL over SQLite | Production-grade, removes single-writer limitation | ✓ Good — goctl model generation, proper connection pooling |
+| Kafka for events | Reliable, persistent event pipeline via go-zero queue integration | ✓ Good — KRaft mode, fire-and-forget preserved, enrichment pipeline works |
+| KRaft mode (no Zookeeper) | Simpler deployment, fewer containers | ✓ Good — single Kafka container, auto-create topics |
+| analytics-consumer as separate service | Dedicated Kafka consumer, not embedded in analytics-rpc | ✓ Good — independent scaling, clean separation |
+| zRPC graceful degradation | Link detail returns 0 clicks if analytics-rpc down | ✓ Good — user-facing endpoint never fails due to analytics |
+| Hand-written mocks over mockgen | Simple function field pattern for small project | ✓ Good — no tooling overhead, easy to maintain |
+| Multi-stage Dockerfile | Single Dockerfile with named targets for all services | ✓ Good — shared build cache, consistent builds |
+| testcontainers-go with pgx driver | Integration tests with real PostgreSQL | ✓ Good — catches schema/query issues early |
 
 ---
-*Last updated: 2026-02-15 after v2.0 milestone start*
+*Last updated: 2026-02-22 after v2.0 milestone*
