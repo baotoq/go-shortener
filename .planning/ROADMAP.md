@@ -4,6 +4,7 @@
 
 - ✅ **v1.0 MVP** — Phases 1-6 (shipped 2026-02-15)
 - ✅ **v2.0 Go-Zero Adoption** — Phases 7-11 (shipped 2026-02-22)
+- 🚧 **v3.0 Production Readiness** — Phases 12-15 (in progress)
 
 ## Phases
 
@@ -34,7 +35,75 @@ Full details: `.planning/milestones/v2.0-ROADMAP.md`
 
 </details>
 
+### 🚧 v3.0 Production Readiness (In Progress)
+
+**Milestone Goal:** Add full observability stack (distributed tracing, log aggregation, metrics and dashboards) and clean up v2.0 tech debt to make the system production-ready.
+
+- [ ] **Phase 12: Tech Debt Cleanup** - Remove dead code, harden consumer test coverage, configure Kafka retention
+- [ ] **Phase 13: Distributed Tracing** - OpenTelemetry traces across all three services with Jaeger visualization
+- [ ] **Phase 14: Log Aggregation** - Loki + log shipper collecting structured JSON logs from all services
+- [ ] **Phase 15: Metrics and Dashboards** - Prometheus scraping + Grafana auto-provisioned with RED metrics dashboard
+
+## Phase Details
+
+### Phase 12: Tech Debt Cleanup
+**Goal**: Clean up known v2.0 debt — dead code removed, consumer enrichment logic tested, Kafka topic retention explicit
+**Depends on**: Nothing (standalone cleanup, no infrastructure dependencies)
+**Requirements**: DEBT-01, DEBT-02, DEBT-03
+**Success Criteria** (what must be TRUE):
+  1. `IncrementClickCount` method and any callers are gone from the codebase and `go build ./...` passes
+  2. analytics-consumer test coverage is above 80% as reported by `go test -cover ./...`
+  3. Kafka `click-events` topic has explicit retention settings in Docker Compose and does not grow unboundedly
+**Plans**: TBD
+
+Plans:
+- [ ] 12-01: TBD
+
+### Phase 13: Distributed Tracing
+**Goal**: All three services emit OpenTelemetry traces to Jaeger, including the async Kafka boundary between url-api and analytics-consumer
+**Depends on**: Phase 12
+**Requirements**: TRACE-01, TRACE-02, TRACE-03
+**Success Criteria** (what must be TRUE):
+  1. Jaeger UI at http://localhost:16686 shows all three services (url-api, analytics-rpc, analytics-consumer) listed as trace sources
+  2. A single URL redirect request produces a connected three-hop trace in Jaeger: HTTP redirect span → Kafka publish → consumer insert
+  3. Visiting a short link shows the full trace chain visible in Jaeger with span links across the Kafka async boundary
+  4. zRPC calls from url-api to analytics-rpc appear as child spans within the same trace tree
+**Plans**: TBD
+
+Plans:
+- [ ] 13-01: TBD
+
+### Phase 14: Log Aggregation
+**Goal**: All three services emit structured JSON logs that are collected by a log shipper and queryable in Loki
+**Depends on**: Phase 13
+**Requirements**: LOG-01, LOG-02, LOG-03
+**Success Criteria** (what must be TRUE):
+  1. All three services emit structured JSON log lines (not plaintext) visible in container stdout
+  2. Loki container is running in Docker Compose and reachable at http://localhost:3100
+  3. Log lines from all three services are queryable in Loki using `{service="url-api"}` style label selectors
+  4. The log shipper (Alloy or Promtail) collects container logs and forwards them to Loki without manual intervention after `docker compose up`
+**Plans**: TBD
+
+Plans:
+- [ ] 14-01: TBD
+
+### Phase 15: Metrics and Dashboards
+**Goal**: Prometheus scrapes built-in go-zero metrics from all services and Grafana auto-provisions a working RED metrics dashboard on startup
+**Depends on**: Phase 14
+**Requirements**: METRICS-01, METRICS-02, METRICS-03
+**Success Criteria** (what must be TRUE):
+  1. Prometheus Status > Targets shows all three service DevServer endpoints (url-api:6470, analytics-rpc:6471, analytics-consumer:6472) as UP
+  2. Grafana at http://localhost:3000 starts with Jaeger, Loki, and Prometheus datasources pre-configured — no manual UI setup required
+  3. Grafana includes a pre-built dashboard showing rate, error rate, and p99 latency per service using `histogram_quantile()` (not `avg()`)
+  4. All panels have data after sending a few test requests — no empty panels on a fresh `docker compose up`
+**Plans**: TBD
+
+Plans:
+- [ ] 15-01: TBD
+
 ## Progress
+
+**Execution Order:** 12 → 13 → 14 → 15
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -49,7 +118,11 @@ Full details: `.planning/milestones/v2.0-ROADMAP.md`
 | 9. Messaging Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 10. Resilience & Infrastructure | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 11. CI Pipeline & Docker Hardening | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
+| 12. Tech Debt Cleanup | v3.0 | 0/TBD | Not started | - |
+| 13. Distributed Tracing | v3.0 | 0/TBD | Not started | - |
+| 14. Log Aggregation | v3.0 | 0/TBD | Not started | - |
+| 15. Metrics and Dashboards | v3.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-14*
-*Last updated: 2026-02-22 after v2.0 milestone completion*
+*Last updated: 2026-02-22 after v3.0 roadmap creation*

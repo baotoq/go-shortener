@@ -61,24 +61,24 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DEBT-01 | TBD | Pending |
-| DEBT-02 | TBD | Pending |
-| DEBT-03 | TBD | Pending |
-| TRACE-01 | TBD | Pending |
-| TRACE-02 | TBD | Pending |
-| TRACE-03 | TBD | Pending |
-| LOG-01 | TBD | Pending |
-| LOG-02 | TBD | Pending |
-| LOG-03 | TBD | Pending |
-| METRICS-01 | TBD | Pending |
-| METRICS-02 | TBD | Pending |
-| METRICS-03 | TBD | Pending |
+| DEBT-01 | Phase 12 | Pending |
+| DEBT-02 | Phase 12 | Pending |
+| DEBT-03 | Phase 12 | Pending |
+| TRACE-01 | Phase 13 | Pending |
+| TRACE-02 | Phase 13 | Pending |
+| TRACE-03 | Phase 13 | Pending |
+| LOG-01 | Phase 14 | Pending |
+| LOG-02 | Phase 14 | Pending |
+| LOG-03 | Phase 14 | Pending |
+| METRICS-01 | Phase 15 | Pending |
+| METRICS-02 | Phase 15 | Pending |
+| METRICS-03 | Phase 15 | Pending |
 
 **Coverage:**
 - v3.0 requirements: 12 total
-- Mapped to phases: 0
-- Unmapped: 12 ⚠️
+- Mapped to phases: 12
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-22*
-*Last updated: 2026-02-22 after initial definition*
+*Last updated: 2026-02-22 after roadmap creation (all 12 requirements mapped)*
