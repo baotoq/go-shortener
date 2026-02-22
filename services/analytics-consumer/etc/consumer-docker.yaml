@@ -11,6 +11,12 @@ Log:
   Mode: console
   Level: info
 
+Telemetry:
+  Name: analytics-consumer
+  Endpoint: jaeger:4317
+  Sampler: 1.0
+  Batcher: otlpgrpc
+
 DataSource: postgres://postgres:postgres@postgres:5432/shortener?sslmode=disable
 
 Pool:

@@ -15,6 +15,12 @@ Log:
   Mode: console
   Level: info
 
+Telemetry:
+  Name: url-api
+  Endpoint: jaeger:4317
+  Sampler: 1.0
+  Batcher: otlpgrpc
+
 BaseUrl: http://localhost:8080
 
 DataSource: postgres://postgres:postgres@postgres:5432/shortener?sslmode=disable

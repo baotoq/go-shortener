@@ -11,6 +11,12 @@ Log:
   Mode: console
   Level: info
 
+Telemetry:
+  Name: analytics-consumer
+  Endpoint: localhost:4317
+  Sampler: 1.0
+  Batcher: otlpgrpc
+
 DataSource: postgres://postgres:postgres@localhost:5433/shortener?sslmode=disable
 
 Pool:

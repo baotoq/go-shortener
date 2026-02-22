@@ -69,7 +69,7 @@ func (l *RedirectLogic) Redirect(req *types.RedirectRequest, r *http.Request) (s
 			return
 		}
 
-		if pushErr := l.svcCtx.KqPusher.Push(context.Background(), string(payload)); pushErr != nil {
+		if pushErr := l.svcCtx.KqPusher.Push(l.ctx, string(payload)); pushErr != nil {
 			logx.Errorw("failed to push click event to Kafka",
 				logx.Field("code", req.Code),
 				logx.Field("error", pushErr.Error()),
