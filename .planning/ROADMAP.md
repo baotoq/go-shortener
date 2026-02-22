@@ -39,7 +39,7 @@ Full details: `.planning/milestones/v2.0-ROADMAP.md`
 
 **Milestone Goal:** Add full observability stack (distributed tracing, log aggregation, metrics and dashboards) and clean up v2.0 tech debt to make the system production-ready.
 
-- [ ] **Phase 12: Tech Debt Cleanup** - Remove dead code, harden consumer test coverage, configure Kafka retention
+- [x] **Phase 12: Tech Debt Cleanup** - Remove dead code, harden consumer test coverage, configure Kafka retention (completed 2026-02-22)
 - [ ] **Phase 13: Distributed Tracing** - OpenTelemetry traces across all three services with Jaeger visualization
 - [ ] **Phase 14: Log Aggregation** - Loki + log shipper collecting structured JSON logs from all services
 - [ ] **Phase 15: Metrics and Dashboards** - Prometheus scraping + Grafana auto-provisioned with RED metrics dashboard
@@ -119,7 +119,7 @@ Plans:
 | 9. Messaging Migration | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 10. Resilience & Infrastructure | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
 | 11. CI Pipeline & Docker Hardening | v2.0 | 3/3 | ✓ Complete | 2026-02-16 |
-| 12. Tech Debt Cleanup | v3.0 | 0/2 | Not started | - |
+| 12. Tech Debt Cleanup | 2/2 | Complete   | 2026-02-22 | - |
 | 13. Distributed Tracing | v3.0 | 0/TBD | Not started | - |
 | 14. Log Aggregation | v3.0 | 0/TBD | Not started | - |
 | 15. Metrics and Dashboards | v3.0 | 0/TBD | Not started | - |

@@ -10,7 +10,7 @@ Requirements for production readiness milestone. Each maps to roadmap phases.
 ### Tech Debt
 
 - [ ] **DEBT-01**: Remove dead IncrementClickCount method and unused click_count column logic
-- [ ] **DEBT-02**: Improve analytics-consumer test coverage above 80%
+- [x] **DEBT-02**: Improve analytics-consumer test coverage above 80%
 - [ ] **DEBT-03**: Configure Kafka click-events topic with explicit retention settings
 
 ### Tracing
@@ -62,7 +62,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | DEBT-01 | Phase 12 | Pending |
-| DEBT-02 | Phase 12 | Pending |
+| DEBT-02 | Phase 12 | Complete |
 | DEBT-03 | Phase 12 | Pending |
 | TRACE-01 | Phase 13 | Pending |
 | TRACE-02 | Phase 13 | Pending |
